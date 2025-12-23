@@ -6,9 +6,14 @@ import Home from "./pages/Home";
 import Cart from "./pages/Cart";
 import Restaurants from "./pages/Restaurants";
 import Profile from "./pages/Profile";
+import RestaurantDetail from "./pages/RestaurantDetail";
+import {Toaster} from 'react-hot-toast';
+import Orders from "./pages/Orders";
 
 export default function App() {
   return (
+    <>
+    <Toaster/>
     <Routes>
       {/* Default */}
       <Route path="/" element={<Navigate to="/register" />} />
@@ -19,10 +24,12 @@ export default function App() {
 
       {/* App */}
       <Route path="/home" element={<Home />} />
+      <Route path="/orders" element={<Orders/>}/>
       <Route path="/cart" element={<Cart/>}/>
       <Route path="/restaurant" element={<Restaurants/>}/>
-      <Route path="/restaurant/:id" element={<Restaurants/>}/>
+      <Route path="/restaurant/:id" element={<RestaurantDetail/>}/>
       <Route path="/profile" element={<Profile/>}/>
     </Routes>
+    </>
   );
 }

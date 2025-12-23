@@ -5,7 +5,7 @@ function Header() {
         Cravio
       </h1>
       <p className="text-sm text-gray-500">
-        Delivering Happiness 🍔
+        Delivering Happiness 
       </p>
     </div>
   );

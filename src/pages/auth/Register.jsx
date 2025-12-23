@@ -25,6 +25,7 @@ const INSERT_USER = gql`
 export default function Register() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [address,setAddress]=useState("");
   const [phone, setPhone] = useState("");
   const [otp, setOtp] = useState("");
 
@@ -75,6 +76,13 @@ export default function Register() {
           placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          className="w-full mt-4 border rounded-lg px-4 py-3"
+        />
+
+        <input
+          placeholder="Address"
+          value={address}
+          onChange={(e) => setAddress(e.target.value)}
           className="w-full mt-4 border rounded-lg px-4 py-3"
         />
 

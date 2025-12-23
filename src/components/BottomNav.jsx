@@ -34,12 +34,20 @@ function BottomNav() {
         <span className="text-xs">Restaurants</span>
       </NavLink>
 
+      <NavLink 
+        to="/orders"
+        className="flex flex-col items-center text-gray-500 hover:text-orange-500"
+      >
+        <ClipboardDocumentListIcon className="w-6 h-6" />
+        <span className="text-xs">Orders</span>
+      </NavLink>
+
       <NavLink
         to="/cart"
         className="flex flex-col items-center text-gray-500 hover:text-orange-500"
       >
         <ClipboardDocumentListIcon className="w-6 h-6" />
-        <span className="text-xs">Orders</span>
+        <span className="text-xs">Cart</span>
       </NavLink>
 
       <NavLink

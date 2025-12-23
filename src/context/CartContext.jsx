@@ -7,8 +7,9 @@ export const CartProvider = ({ children }) => {
 
   const addToCart = (item) => {
     setCart((prev) => {
-      const exists = prev.find((i) => i.id === item.id);
-      if (exists) {
+      const existing = prev.find((i) => i.id === item.id);
+
+      if (existing) {
         return prev.map((i) =>
           i.id === item.id ? { ...i, qty: i.qty + 1 } : i
         );
@@ -18,14 +19,34 @@ export const CartProvider = ({ children }) => {
   };
 
   const removeFromCart = (id) => {
-    setCart((prev) => prev.filter((i) => i.id !== id));
+    setCart((prev) =>
+      prev
+        .map((i) =>
+          i.id === id ? { ...i, qty: i.qty - 1 } : i
+        )
+        .filter((i) => i.qty > 0)
+    );
   };
 
-  const clearCart = () => setCart([]);
+  const clearCart = () => {
+    setCart([]);
+  };
+
+  const totalAmount = cart.reduce(
+    (sum, item) => sum + item.price * item.qty,
+    0
+  );
 
   return (
+   
     <CartContext.Provider
-      value={{ cart, addToCart, removeFromCart, clearCart }}
+      value={{
+        cart,
+        addToCart,
+        removeFromCart,
+        clearCart,
+        totalAmount,
+      }}
     >
       {children}
     </CartContext.Provider>

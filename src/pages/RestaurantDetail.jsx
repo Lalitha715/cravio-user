@@ -1,37 +1,36 @@
+import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { gql, useQuery } from "@apollo/client";
-
-const GET_RESTAURANT = gql`
-  query GetRestaurant($id: uuid!) {
-    restaurants_by_pk(id: $id) {
-      name
-      address
-      phone
-      email
-      created_at
-    }
-  }
-`;
+import { fetchDishesByRestaurant } from "../api/hasura";
+import FoodCard from "../components/FoodCard";
+import BottomNav from "../components/BottomNav";
 
 export default function RestaurantDetails() {
   const { id } = useParams();
-  const { data, loading, error } = useQuery(GET_RESTAURANT, {
-    variables: { id },
-    skip: !id,
-  });
+  const [dishes, setDishes] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  if (loading) return <p>Loading...</p>;
-  if (error) return <p>Error loading restaurant</p>;
-  if (!data?.restaurants_by_pk) return <p>Not found</p>;
+  useEffect(() => {
+    const loadDishes = async () => {
+      const data = await fetchDishesByRestaurant(id);
+      setDishes(data);
+      setLoading(false);
+    };
+    loadDishes();
+  }, [id]);
 
-  const r = data.restaurants_by_pk;
+  if (loading) return <p className="p-4">Loading menu...</p>;
 
   return (
-    <div className="p-6">
-      <h1 className="text-3xl font-bold text-orange-500">{r.name}</h1>
-      <p>{r.address}</p>
-      <p>{r.phone}</p>
-      <p>{r.email}</p>
+    <div className="p-4">
+      <BottomNav/>
+      <h1 className="text-xl font-bold mb-4">Menu</h1>
+
+      {/* 🔥 GRID HERE */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+        {dishes.map((dish) => (
+          <FoodCard key={dish.id} dish={dish} src={dish.image} />
+        ))}
+      </div>
     </div>
   );
 }

@@ -1,5 +1,6 @@
 import { gql, useQuery } from "@apollo/client";
 import { useNavigate } from "react-router-dom";
+import BottomNav from "../components/BottomNav";
 
 const GET_PROFILE = gql`
   query GetProfile($email: String!) {
@@ -33,6 +34,7 @@ export default function Profile() {
 
   return (
     <div className="p-6 pb-20">
+      <BottomNav/>
       <h1 className="text-2xl font-bold mb-4">Profile</h1>
 
       <div className="bg-white rounded-xl shadow p-4">
