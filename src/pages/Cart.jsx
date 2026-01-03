@@ -11,12 +11,8 @@ import {
 
 export default function Cart() {
   const { cart, updateQuantity, removeFromCart, clearCart } = useCart();
-
   const userPhone = localStorage.getItem("userPhone");
 
-  /* ======================
-     Quantity handlers
-  ====================== */
   const increaseQty = (item) => {
     updateQuantity(item.id, item.restaurant_id, item.quantity + 1);
   };
@@ -26,36 +22,25 @@ export default function Cart() {
     updateQuantity(item.id, item.restaurant_id, item.quantity - 1);
   };
 
-  /* ======================
-     Total amount
-  ====================== */
   const getTotal = () =>
     cart.reduce((sum, item) => sum + item.quantity * item.price, 0);
 
-  /* ======================
-     Checkout handler
-  ====================== */
   const handleCheckout = async () => {
     try {
-      if (!userPhone) { 
+      if (!userPhone) {
         alert("Please login to continue checkout");
         return;
       }
 
-      /* 1️⃣ Get or create user */
       let user = await getUserByPhone(userPhone);
-      if (!user) {
-        user = await createUser(userPhone);
-      }
+      if (!user) user = await createUser(userPhone);
 
-      /* 2️⃣ Create order */
       const order = await createOrder({
         user_id: user.id,
         total_amount: getTotal(),
         status: "pending",
       });
 
-      /* 3️⃣ Prepare order items (multi-restaurant safe) */
       const orderItems = cart.map((item) => ({
         order_id: order.id,
         dish_id: item.id,
@@ -64,10 +49,7 @@ export default function Cart() {
         restaurant_id: item.restaurant_id,
       }));
 
-      /* 4️⃣ Insert order items */
       await insertOrderItems(orderItems);
-
-      /* 5️⃣ Clear cart (DB + local) */
       await clearUserCart(user.id);
       clearCart();
 
@@ -82,75 +64,88 @@ export default function Cart() {
     <>
       <Header />
 
-      <div className="min-h-screen bg-gray-100 px-4 py-20 pb-28">
-        <h1 className="text-2xl font-bold mb-4">Your Cart</h1>
+      <div className="min-h-screen px-4 pt-24 pb-32">
+        <h1 className="text-2xl font-extrabold text-center mb-6 bg-gradient-to-r from-red-500 to-pink-500 text-transparent bg-clip-text">
+          Your Cart
+        </h1>
 
         {cart.length === 0 ? (
-          <p className="text-gray-500">Your cart is empty</p>
+          <p className="text-center text-gray-400">
+            Your cart is empty 🛒
+          </p>
         ) : (
-          <>
+          <div className="max-w-md mx-auto space-y-4">
             {cart.map((item) => (
               <div
                 key={`${item.id}-${item.restaurant_id}`}
-                className="bg-white rounded-xl p-4 mb-4 flex justify-between items-center"
+                className="bg-white rounded-2xl shadow-md p-4 flex gap-4"
               >
                 <img
                   src={item.image_url || "/dish-placeholder.jpg"}
                   alt={item.name}
-                  className="w-20 h-20 object-cover rounded"
+                  className="w-20 h-20 rounded-xl object-cover"
                 />
 
-                <div className="flex-1 mx-4">
-                  <h2 className="font-semibold">{item.name}</h2>
-                  <p className="text-sm text-gray-500">₹{item.price}</p>
+                <div className="flex-1">
+                  <h2 className="font-semibold text-gray-800">
+                    {item.name}
+                  </h2>
+                  <p className="text-sm text-gray-500">
+                    ₹{item.price}
+                  </p>
                   <p className="text-xs text-gray-400">
                     {item.restaurant_name}
                   </p>
+
+                  {/* Quantity */}
+                  <div className="flex items-center gap-3 mt-3">
+                    <button
+                      onClick={() => decreaseQty(item)}
+                      className="w-8 h-8 rounded-full bg-gray-100 font-bold"
+                    >
+                      −
+                    </button>
+
+                    <span className="font-semibold">
+                      {item.quantity}
+                    </span>
+
+                    <button
+                      onClick={() => increaseQty(item)}
+                      className="w-8 h-8 rounded-full bg-gray-100 font-bold"
+                    >
+                      +
+                    </button>
+                  </div>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <button
-                    onClick={() => decreaseQty(item)}
-                    className="px-3 py-1 bg-gray-200 rounded"
-                  >
-                    −
-                  </button>
-
-                  <span>{item.quantity}</span>
-
-                  <button
-                    onClick={() => increaseQty(item)}
-                    className="px-3 py-1 bg-gray-200 rounded"
-                  >
-                    +
-                  </button>
-
-                  <button
-                    onClick={() =>
-                      removeFromCart(item.id, item.restaurant_id)
-                    }
-                    className="bg-red-500 text-white px-3 py-1 rounded"
-                  >
-                    Remove
-                  </button>
-                </div>
+                {/* Remove */}
+                <button
+                  onClick={() =>
+                    removeFromCart(item.id, item.restaurant_id)
+                  }
+                  className="text-red-500 text-sm font-medium"
+                >
+                  ✕
+                </button>
               </div>
             ))}
 
-            <div className="bg-white p-4 rounded-xl">
-              <div className="flex justify-between font-semibold mb-4">
+            {/* Total + Checkout */}
+            <div className="bg-white rounded-2xl shadow-lg p-5 mt-6">
+              <div className="flex justify-between font-semibold text-lg mb-4">
                 <span>Total</span>
                 <span>₹{getTotal()}</span>
               </div>
 
               <button
                 onClick={handleCheckout}
-                className="w-full bg-red-500 text-white py-3 rounded-lg"
+                className="w-full py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-red-500 to-pink-500 hover:opacity-90 transition"
               >
                 Checkout
               </button>
             </div>
-          </>
+          </div>
         )}
       </div>
 

@@ -7,10 +7,13 @@ import {
   AiOutlineProfile,
 } from "react-icons/ai";
 import { MdOutlineReceiptLong } from "react-icons/md";
+import { useCart } from "../context/CartContext";
 
 export default function BottomNav() {
+  const { totalItems } = useCart();
+
   const linkClass =
-    "flex flex-col items-center justify-center text-xs text-gray-500";
+    "relative flex flex-col items-center justify-center text-xs text-gray-500";
   const activeClass = "text-red-500";
 
   return (
@@ -26,8 +29,17 @@ export default function BottomNav() {
           Search
         </NavLink>
 
+        {/* 🛒 Cart with Badge */}
         <NavLink to="/cart" className={({ isActive }) => `${linkClass} ${isActive && activeClass}`}>
-          <AiOutlineShoppingCart size={22} />
+          <div className="relative">
+            <AiOutlineShoppingCart size={22} />
+
+            {totalItems > 0 && (
+              <span className="absolute -top-1 -right-2 bg-red-500 text-white text-[10px] px-1.5 rounded-full">
+                {totalItems}
+              </span>
+            )}
+          </div>
           Cart
         </NavLink>
 

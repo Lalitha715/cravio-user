@@ -3,7 +3,6 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { fetchDishesByRestaurant } from "../api/hasura";
 import Header from "../components/Header";
-import Footer from "../components/Footer";
 import BottomNav from "../components/BottomNav";
 import FoodCard from "../components/FoodCard";
 
@@ -64,7 +63,6 @@ export default function RestaurantMenu() {
       </div>
 
       <BottomNav />
-      <Footer />
     </>
   );
 }

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import Header from "../components/Header";
 import BottomNav from "../components/BottomNav";
-import { fetchRestaurants, fetchAllDishes } from "../api/hasura"; // adjust api imports
+import { fetchRestaurants, fetchAllDishes } from "../api/hasura";
 
 export default function Search() {
   const [query, setQuery] = useState("");
@@ -9,19 +9,17 @@ export default function Search() {
   const [restaurants, setRestaurants] = useState([]);
   const [dishes, setDishes] = useState([]);
 
-  // Load all restaurants & dishes initially
   useEffect(() => {
     const loadData = async () => {
       const res = await fetchRestaurants();
-      setRestaurants(res);
+      setRestaurants(res || []);
 
-      const dishList = await fetchAllDishes(); // returns all dishes
-      setDishes(dishList);
+      const dishList = await fetchAllDishes();
+      setDishes(dishList || []);
     };
     loadData();
   }, []);
 
-  // Update suggestions on query change
   useEffect(() => {
     if (!query.trim()) {
       setSuggestions([]);
@@ -38,62 +36,85 @@ export default function Search() {
       .filter((r) => r.name.toLowerCase().includes(lower))
       .map((r) => ({ type: "restaurant", restaurant: r }));
 
-    // Merge and limit to 10 suggestions
     setSuggestions([...dishMatches, ...restaurantMatches].slice(0, 10));
   }, [query, dishes, restaurants]);
 
   const handleSelect = (item) => {
     if (item.type === "dish") {
-      // navigate to dish page or restaurant detail
       window.location.href = `/restaurant/${item.dish.restaurant_id}`;
-    } else if (item.type === "restaurant") {
+    } else {
       window.location.href = `/restaurant/${item.restaurant.id}`;
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col pt-20">
-      {/* Header fixed */}
+    <div className="min-h-screen flex flex-col pt-20">
       <Header className="fixed top-0 w-full z-10" />
 
-      <div className="px-4 py-6 w-full max-w-md mx-auto flex flex-col z-0">
-        <h1 className="text-2xl font-bold mb-4 text-center">Search</h1>
+      <div className="px-4 py-6 w-full max-w-md mx-auto">
+        {/* Title */}
+        <h1 className="text-2xl font-extrabold text-center mb-6 bg-gradient-to-r from-red-500 to-pink-500 text-transparent bg-clip-text">
+          Search
+        </h1>
 
-        <input
-          type="text"
-          placeholder="Search Restaurant or Dish"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          className="w-full border p-2 rounded mb-4 focus:outline-none focus:ring-2 focus:ring-red-500"
-        />
+        {/* Search box */}
+        <div className="relative mb-6">
+          <input
+            type="text"
+            placeholder="Search restaurants or dishes"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            className="w-full rounded-2xl border border-gray-200 px-4 py-3 shadow-sm focus:outline-none focus:ring-2 focus:ring-red-400"
+          />
+          <span className="absolute right-4 top-3 text-gray-400">🔍</span>
+        </div>
 
+        {/* Empty state */}
         {suggestions.length === 0 && query && (
-          <p className="text-center text-gray-500 mt-2">No results found</p>
+          <p className="text-center text-gray-400">
+            No results found 😕
+          </p>
         )}
 
+        {/* Suggestions */}
         {suggestions.length > 0 && (
-          <div className="flex overflow-x-auto space-x-3 pb-2">
+          <div className="flex overflow-x-auto gap-4 pb-4">
             {suggestions.map((item, idx) => (
               <div
                 key={idx}
                 onClick={() => handleSelect(item)}
-                className="flex-none w-32 bg-white rounded-lg shadow cursor-pointer p-2 hover:shadow-lg"
+                className="flex-none w-36 bg-white rounded-2xl shadow-md p-2 cursor-pointer hover:shadow-lg transition"
               >
-                <div className="h-20 w-full bg-gray-200 rounded mb-2 flex items-center justify-center">
+                <div className="h-24 w-full rounded-xl overflow-hidden bg-gray-100 mb-2">
                   {item.type === "dish" && item.dish.image_url ? (
                     <img
                       src={item.dish.image_url}
                       alt={item.dish.name}
-                      className="h-full w-full object-cover rounded"
+                      className="h-full w-full object-cover"
                     />
                   ) : (
-                    <span className="text-gray-400 text-sm">
-                      {item.type === "restaurant" ? item.restaurant.name : "No Image"}
-                    </span>
+                    <div className="h-full w-full flex items-center justify-center text-xs text-gray-400 text-center px-2">
+                      {item.type === "restaurant"
+                        ? item.restaurant.name
+                        : "No Image"}
+                    </div>
                   )}
                 </div>
-                <p className="text-sm font-medium text-center">
-                  {item.type === "dish" ? item.dish.name : item.restaurant.name}
+
+                <p className="text-sm font-semibold text-center truncate">
+                  {item.type === "dish"
+                    ? item.dish.name
+                    : item.restaurant.name}
+                </p>
+
+                <p
+                  className={`text-xs text-center mt-1 ${
+                    item.type === "dish"
+                      ? "text-pink-500"
+                      : "text-indigo-500"
+                  }`}
+                >
+                  {item.type === "dish" ? "Dish" : "Restaurant"}
                 </p>
               </div>
             ))}

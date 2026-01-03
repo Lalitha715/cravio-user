@@ -2,7 +2,6 @@
 import React, { useEffect, useState } from "react";
 import { fetchRestaurants } from "../api/hasura";
 import Header from "../components/Header";
-import Footer from "../components/Footer";
 import BottomNav from "../components/BottomNav";
 import RestaurantCard from "../components/RestaurantCard";
 import { useNavigate } from "react-router-dom";
@@ -19,10 +18,10 @@ export default function Home() {
     const loadRestaurants = async () => {
       try {
         const data = await fetchRestaurants();
-        setRestaurants(data);
+        setRestaurants(data || []);
       } catch (err) {
         console.error(err);
-        setError("Failed to load restaurants");
+        setError("Failed to load restaurants 😕");
       } finally {
         setLoading(false);
       }
@@ -39,34 +38,64 @@ export default function Home() {
     <>
       <Header />
 
-      <div className="min-h-screen bg-gray-100 px-4 py-20 pb-24">
-        <h1 className="text-2xl font-bold mb-4">Nearby Restaurants</h1>
+      <div className="min-h-screen px-4 py-20 pb-24">
+        {/* Title */}
+        <h1 className="text-2xl font-extrabold mb-5 text-center bg-gradient-to-r from-red-500 to-pink-500 text-transparent bg-clip-text">
+          Nearby Restaurants
+        </h1>
 
         {/* Search Bar */}
-        <input
-          type="text"
-          placeholder="Search restaurants..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full mb-6 px-4 py-2 border rounded-lg focus:outline-none focus:ring focus:ring-red-300"
-        />
-
-        {loading && <p>Loading restaurants...</p>}
-        {error && <p className="text-red-500">{error}</p>}
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-          {filteredRestaurants.map((res) => (
-            <RestaurantCard
-              key={res.id}
-              restaurant={res}
-              onClick={() => navigate(`/restaurant/${res.id}`)}
-            />
-          ))}
+        <div className="max-w-md mx-auto mb-8 relative">
+          <input
+            type="text"
+            placeholder="Search restaurants..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full px-4 py-3 rounded-2xl border border-gray-200 shadow-sm focus:outline-none focus:ring-2 focus:ring-red-400"
+          />
+          <span className="absolute right-4 top-3 text-gray-400">🔍</span>
         </div>
+
+        {/* Loading */}
+        {loading && (
+          <p className="text-center text-gray-400">
+            Loading restaurants...
+          </p>
+        )}
+
+        {/* Error */}
+        {error && (
+          <p className="text-center text-red-500 font-medium">
+            {error}
+          </p>
+        )}
+
+        {/* Restaurant List */}
+        {!loading && !error && (
+          <>
+            {filteredRestaurants.length === 0 ? (
+              <p className="text-center text-gray-400">
+                No restaurants found 🍽️
+              </p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                {filteredRestaurants.map((res) => (
+                  <div
+                    key={res.id}
+                    onClick={() => navigate(`/restaurant/${res.id}`)}
+                    className="cursor-pointer transform transition hover:-translate-y-1"
+                  >
+                    <RestaurantCard restaurant={res} />
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
       </div>
 
       <BottomNav />
-      <Footer />
+      
     </>
   );
 }

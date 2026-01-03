@@ -4,28 +4,44 @@ import React from "react";
 export default function RestaurantCard({ restaurant, onClick }) {
   return (
     <div
-      className="bg-white rounded-xl shadow hover:shadow-lg transition cursor-pointer w-full max-w-xs mx-auto"
       onClick={onClick}
+      className="rounded-2xl p-[2px] bg-gradient-to-br from-pink-500 via-orange-400 to-red-500 shadow-lg cursor-pointer hover:scale-[1.02] transition-transform"
     >
-      {/* Square image container */}
-      <div className="w-full h-48 flex items-center justify-center overflow-hidden rounded-t-xl bg-gray-100">
-        <img
-          src={restaurant.image_url || "/restaurant.jpg"}
-          alt={restaurant.name}
-          className="max-h-full max-w-full object-contain"
-        />
-      </div>
+      <div className="bg-white rounded-2xl overflow-hidden">
+        {/* Image */}
+        <div className="relative group h-48 bg-gray-100 flex items-center justify-center overflow-hidden">
+          <img
+            src={restaurant.image_url || "/restaurant.jpg"}
+            alt={restaurant.name}
+            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+          />
 
-      {/* Info section */}
-      <div className="p-4">
-        <h2 className="text-lg font-semibold">{restaurant.name}</h2>
-        <p className="text-gray-600 text-sm">{restaurant.address}</p>
-
-        <div className="mt-2 flex justify-between items-center">
-          <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
+          {/* Rating badge */}
+          <span className="absolute top-3 right-3 bg-white/90 text-green-600 text-xs font-bold px-3 py-1 rounded-full shadow">
             ⭐ {restaurant.hygiene_rating || "N/A"}
           </span>
-          <span className="text-sm text-red-500 font-semibold">View Menu →</span>
+        </div>
+
+        {/* Info */}
+        <div className="p-4">
+          <h2 className="text-lg font-bold text-gray-800 truncate">
+            {restaurant.name}
+          </h2>
+
+          <p className="text-sm text-gray-500 mt-1 line-clamp-2">
+            {restaurant.address}
+          </p>
+
+          {/* Footer */}
+          <div className="mt-4 flex justify-between items-center">
+            <span className="text-xs bg-gray-100 text-gray-600 px-3 py-1 rounded-full">
+              Open Now
+            </span>
+
+            <span className="text-sm font-semibold text-red-500">
+              View Menu →
+            </span>
+          </div>
         </div>
       </div>
     </div>

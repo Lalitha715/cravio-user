@@ -5,32 +5,26 @@ import { gql } from "@apollo/client";
 /* =========================
    USERS
 ========================= */
-const INSERT_TEMP_USER = gql`
-  mutation InsertTempUser($phone: String!) {
-    insert_users_one(
-      object: {
-        phone: $phone
-        name: "Temp User"
-        role: "TEMP"
+
+// Create user with phone + email
+export const createUser = async (phone, email) => {
+  const mutation = gql`
+    mutation InsertUser($phone: String!, $email: String!) {
+      insert_users_one(object: { phone: $phone, email: $email, name: "Temp User", role: "TEMP" }) {
+        id
+        phone
+        email
       }
-    ) {
-      id
-      phone
     }
-  }
-`;
-
-export const createUser = async (phone) => {
-  const res = await client.mutate({
-    mutation: INSERT_TEMP_USER,
-    variables: { phone },
+  `;
+  const { data } = await client.mutate({
+    mutation,
+    variables: { phone, email },
   });
-
-  return res.data.insert_users_one;
+  return data.insert_users_one;
 };
 
-
-// Get user by phone
+// Get user by phone (including email)
 export const getUserByPhone = async (phone) => {
   const { data } = await client.query({
     query: gql`
@@ -38,14 +32,14 @@ export const getUserByPhone = async (phone) => {
         users(where: { phone: { _eq: $phone } }) {
           id
           phone
+          name
         }
       }
     `,
     variables: { phone },
     fetchPolicy: "no-cache",
   });
-
-  return data.users[0];
+  return data.users[0]; // return first user if exists
 };
 
 /* =========================
@@ -74,6 +68,7 @@ export const fetchRestaurants = async () => {
 /* =========================
    DISHES
 ========================= */
+
 export const fetchDishesByRestaurant = async (restaurantId) => {
   const { data } = await client.query({
     query: gql`
@@ -105,9 +100,7 @@ export const fetchUserCart = async (userId) => {
   const { data } = await client.query({
     query: gql`
       query FetchCart($userId: uuid!) {
-        cart_items(
-          where: { user_id: { _eq: $userId } }
-        ) {
+        cart_items(where: { user_id: { _eq: $userId } }) {
           id
           quantity
           restaurant_id
@@ -124,16 +117,10 @@ export const fetchUserCart = async (userId) => {
     variables: { userId },
     fetchPolicy: "no-cache",
   });
-
   return data.cart_items;
 };
-// Add to cart
-export const addToCart = async ({
-  user_id,
-  dish_id,
-  restaurant_id,
-  price,
-}) => {
+
+export const addToCart = async ({ user_id, dish_id, restaurant_id, price }) => {
   const { data } = await client.mutate({
     mutation: gql`
       mutation AddToCart(
@@ -143,13 +130,7 @@ export const addToCart = async ({
         $price: numeric!
       ) {
         insert_cart_items_one(
-          object: {
-            user_id: $user_id
-            dish_id: $dish_id
-            restaurant_id: $restaurant_id
-            quantity: 1
-            price: $price
-          }
+          object: { user_id: $user_id, dish_id: $dish_id, restaurant_id: $restaurant_id, quantity: 1, price: $price }
         ) {
           id
         }
@@ -157,30 +138,23 @@ export const addToCart = async ({
     `,
     variables: { user_id, dish_id, restaurant_id, price },
   });
-
   return data.insert_cart_items_one;
 };
 
-// Update quantity
 export const updateCartQty = async (id, quantity) => {
   const { data } = await client.mutate({
     mutation: gql`
       mutation UpdateQty($id: uuid!, $quantity: Int!) {
-        update_cart_items_by_pk(
-          pk_columns: { id: $id }
-          _set: { quantity: $quantity }
-        ) {
+        update_cart_items_by_pk(pk_columns: { id: $id }, _set: { quantity: $quantity }) {
           id
         }
       }
     `,
     variables: { id, quantity },
   });
-
   return data.update_cart_items_by_pk;
 };
 
-// Remove item
 export const removeCartItem = async (id) => {
   await client.mutate({
     mutation: gql`
@@ -194,7 +168,6 @@ export const removeCartItem = async (id) => {
   });
 };
 
-// Clear cart after checkout
 export const clearUserCart = async (userId) => {
   await client.mutate({
     mutation: gql`
@@ -212,11 +185,7 @@ export const clearUserCart = async (userId) => {
    ORDERS
 ========================= */
 
-export const createOrder = async ({
-  user_id,
-  total_amount,
-  status = "pending",
-}) => {
+export const createOrder = async ({ user_id, total_amount, status = "pending" }) => {
   const { data } = await client.mutate({
     mutation: gql`
       mutation CreateOrder($order: orders_insert_input!) {
@@ -228,11 +197,8 @@ export const createOrder = async ({
         }
       }
     `,
-    variables: {
-      order: { user_id, total_amount, status },
-    },
+    variables: { order: { user_id, total_amount, status } },
   });
-
   return data.insert_orders_one;
 };
 
@@ -247,19 +213,18 @@ export const insertOrderItems = async (items) => {
     `,
     variables: { items },
   });
-
   return data.insert_order_items;
 };
 
+/* =========================
+   USER ORDERS
+========================= */
 
 export const fetchUserOrders = async (userId) => {
   const { data } = await client.query({
     query: gql`
       query GetUserOrders($userId: uuid!) {
-        orders(
-          where: { user_id: { _eq: $userId } }
-          order_by: { created_at: desc }
-        ) {
+        orders(where: { user_id: { _eq: $userId } }, order_by: { created_at: desc }) {
           id
           order_number
           total_amount
@@ -268,14 +233,8 @@ export const fetchUserOrders = async (userId) => {
             id
             quantity
             price
-            dish {
-              id
-              name
-            }
-            restaurant {
-              id
-              name
-            }
+            dish { id name }
+            restaurant { id name }
           }
         }
       }
@@ -299,6 +258,10 @@ export const fetchUserOrders = async (userId) => {
   }));
 };
 
+/* =========================
+   DISHES
+========================= */
+
 export const fetchAllDishes = async () => {
   const { data } = await client.query({
     query: gql`
@@ -311,8 +274,99 @@ export const fetchAllDishes = async () => {
         }
       }
     `,
-    fetchPolicy: "no-cache", // optional, always get fresh data
+    fetchPolicy: "no-cache",
   });
 
   return data.dishes;
 };
+
+export const updateUserName = async (userId, name) => {
+  await client.mutate({
+    mutation: gql`
+      mutation UpdateUserName($id: uuid!, $name: String!) {
+        update_users_by_pk(
+          pk_columns: { id: $id }
+          _set: { name: $name }
+        ) {
+          id
+        }
+      }
+    `,
+    variables: { id: userId, name },
+  });
+};
+
+/* =========================
+   USER ADDRESSES
+========================= */
+
+export const getUserAddress = async (userId) => {
+  const { data } = await client.query({
+    query: gql`
+      query GetUserAddress($userId: uuid!) {
+        user_addresses(
+          where: {
+            user_id: { _eq: $userId }
+            is_default: { _eq: true }
+          }
+          limit: 1
+        ) {
+          id
+          address_line
+          city
+          state
+          pincode
+        }
+      }
+    `,
+    variables: { userId },
+    fetchPolicy: "no-cache",
+  });
+
+  return data.user_addresses[0] || null;
+};
+
+export const upsertUserAddress = async ({
+  userId,
+  address_line,
+  city,
+  state,
+  pincode,
+}) => {
+  await client.mutate({
+    mutation: gql`
+      mutation UpsertUserAddress(
+        $userId: uuid!
+        $address_line: text!
+        $city: text
+        $state: text
+        $pincode: text
+      ) {
+        insert_user_addresses_one(
+          object: {
+            user_id: $userId
+            label: "Home"
+            address_line: $address_line
+            city: $city
+            state: $state
+            pincode: $pincode
+            is_default: true
+          }
+          on_conflict: {
+            constraint: user_addresses_user_id_is_default_key
+            update_columns: [
+              address_line
+              city
+              state
+              pincode
+            ]
+          }
+        ) {
+          id
+        }
+      }
+    `,
+    variables: { userId, address_line, city, state, pincode },
+  });
+};
+

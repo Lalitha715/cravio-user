@@ -12,6 +12,12 @@ export const CartProvider = ({ children }) => {
     localStorage.setItem("cart", JSON.stringify(cart));
   }, [cart]);
 
+  const totalItems = cart.reduce(
+    (sum, item) => sum + item.quantity,
+    0
+  );
+
+
   const addToCart = (item) => {
     setCart((prev) => {
       const existing = prev.find(
@@ -25,7 +31,7 @@ export const CartProvider = ({ children }) => {
             : i
         );
       } else {
-        return [...prev, { ...item, quantity: 1 ,restaurant_name: item.restaurant_name, image_url: item.image_url}];
+        return [...prev, { ...item, quantity: 1, restaurant_name: item.restaurant_name, image_url: item.image_url }];
       }
     });
   };
@@ -50,7 +56,7 @@ export const CartProvider = ({ children }) => {
 
   return (
     <CartContext.Provider
-      value={{ cart, addToCart, removeFromCart, updateQuantity, clearCart }}
+      value={{ cart, addToCart, removeFromCart, updateQuantity, clearCart,totalItems }}
     >
       {children}
     </CartContext.Provider>
