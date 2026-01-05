@@ -5,8 +5,11 @@ import {
   signInWithPhoneNumber,
 } from "firebase/auth";
 import { Link, useNavigate } from "react-router-dom";
+import client from "../../apolloClient"; // Apollo client
+import { gql } from "@apollo/client";
 
 export default function Signup() {
+  const [name, setName] = useState(""); // ✅ New name field
   const [countryCode, setCountryCode] = useState("+91");
   const [number, setNumber] = useState("");
   const [otp, setOtp] = useState("");
@@ -25,6 +28,11 @@ export default function Signup() {
   }, []);
 
   const sendOtp = async () => {
+    if (!name.trim()) {
+      alert("Enter your name");
+      return;
+    }
+
     if (number.length < 10) {
       alert("Enter valid mobile number");
       return;
@@ -46,12 +54,41 @@ export default function Signup() {
     }
   };
 
+  const saveUser = async (phone) => {
+    const mutation = gql`
+      mutation InsertUser($phone: String!, $name: String!) {
+        insert_users_one(object: { phone: $phone, name: $name }) {
+          id
+          name
+          phone
+        }
+      }
+    `;
+
+    try {
+      await client.mutate({
+        mutation,
+        variables: { phone, name },
+      });
+      console.log("User saved to Hasura ✅");
+    } catch (err) {
+      console.error("Error saving user:", err);
+    }
+  };
+
   const verifyOtp = async () => {
     try {
       setLoading(true);
       const result = await confirmation.confirm(otp);
-      localStorage.setItem("userPhone", result.user.phoneNumber);
-      navigate("/home");
+      const fullPhone = result.user.phoneNumber;
+
+      // Store phone locally
+      localStorage.setItem("userPhone", fullPhone);
+
+      // Save user in Hasura
+      await saveUser(fullPhone);
+
+      navigate("/signup-success", { state: { type: "signup" } });
     } catch {
       alert("Invalid OTP");
     } finally {
@@ -61,7 +98,6 @@ export default function Signup() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      {/* Arusuvai Theme Card */}
       <div className="relative w-96 p-[2px] rounded-2xl bg-gradient-to-br 
         from-blue-500 via-green-400 via-violet-500 via-orange-400 via-pink-400 to-red-500 shadow-2xl">
 
@@ -72,6 +108,15 @@ export default function Signup() {
           <p className="text-center text-gray-500 mb-6">
             Sign up with your mobile number
           </p>
+
+          {/* Name Input */}
+          <input
+            type="text"
+            placeholder="Full Name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="border rounded-lg px-3 py-2 mb-4 w-full focus:ring-2 focus:ring-orange-400 outline-none"
+          />
 
           {/* Phone input */}
           <div className="flex gap-2 mb-4">

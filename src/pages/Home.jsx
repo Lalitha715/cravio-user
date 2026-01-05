@@ -11,10 +11,15 @@ export default function Home() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [userName, setUserName] = useState(""); // ✅ State for logged-in user name
 
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Load user name from localStorage
+    const name = localStorage.getItem("userName") || "";
+    setUserName(name);
+
     const loadRestaurants = async () => {
       try {
         const data = await fetchRestaurants();
@@ -39,6 +44,13 @@ export default function Home() {
       <Header />
 
       <div className="min-h-screen px-4 py-20 pb-24">
+        {/* Welcome Message */}
+        {userName && (
+          <h2 className="text-xl font-semibold mb-4 text-center text-green-600">
+            Welcome, {userName} 👋
+          </h2>
+        )}
+
         {/* Title */}
         <h1 className="text-2xl font-extrabold mb-5 text-center bg-gradient-to-r from-red-500 to-pink-500 text-transparent bg-clip-text">
           Nearby Restaurants
@@ -95,7 +107,6 @@ export default function Home() {
       </div>
 
       <BottomNav />
-      
     </>
   );
 }

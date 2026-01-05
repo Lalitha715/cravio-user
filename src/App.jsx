@@ -9,6 +9,8 @@ import Cart from "./pages/Cart";
 import Profile from "./pages/Profile";
 import Orders from "./pages/Orders";
 import Search from "./pages/Search";
+import SuccessSignup from "./pages/Auth/SuccessSignup";
+import SuccessLogin from "./pages/Auth/SuccessLogin";
 
 export default function App() {
   return (
@@ -17,7 +19,9 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Signup />} />
         <Route path="/signup" element={<Signup />} />
+        <Route path="/signup-success" element={<SuccessSignup/>}/>
         <Route path="/login" element={<Login />} />
+        <Route path="/login-success" element={<SuccessLogin/>}/>
         <Route path="/home" element={<Home />} />
         <Route path="/search" element={<Search />} />
         <Route path="/cart" element={<Cart/>}/>

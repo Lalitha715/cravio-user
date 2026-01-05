@@ -5,6 +5,8 @@ import {
   signInWithPhoneNumber,
 } from "firebase/auth";
 import { Link, useNavigate } from "react-router-dom";
+import client from "../../apolloClient"; // Apollo client
+import { gql } from "@apollo/client";
 
 export default function Login() {
   const [countryCode, setCountryCode] = useState("+91");
@@ -46,6 +48,30 @@ export default function Login() {
     }
   };
 
+  // ✅ Fetch user name from Hasura after OTP verification
+  const fetchUserName = async (phone) => {
+    const query = gql`
+      query GetUserByPhone($phone: String!) {
+        users(where: { phone: { _eq: $phone } }) {
+          name
+        }
+      }
+    `;
+
+    try {
+      const res = await client.query({
+        query,
+        variables: { phone },
+        fetchPolicy: "no-cache",
+      });
+
+      return res.data.users[0]?.name || "";
+    } catch (err) {
+      console.error("Error fetching user name:", err);
+      return "";
+    }
+  };
+
   const verifyOtp = async () => {
     try {
       setLoading(true);
@@ -54,7 +80,11 @@ export default function Login() {
       const fullPhone = `${countryCode}${number}`;
       localStorage.setItem("userPhone", fullPhone);
 
-      navigate("/home");
+      // ✅ Fetch name and store
+      const userName = await fetchUserName(fullPhone);
+      localStorage.setItem("userName", userName);
+
+      navigate("/login-success", { state: { type: "login" } } );
     } catch {
       alert("Invalid OTP");
     } finally {
@@ -64,7 +94,6 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      {/* Arusuvai Theme Card */}
       <div className="relative w-96 p-[2px] rounded-2xl bg-gradient-to-br 
         from-blue-500 via-green-400 via-violet-500 via-orange-400 via-pink-400 to-red-500 shadow-2xl">
 

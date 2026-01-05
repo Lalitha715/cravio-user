@@ -307,7 +307,7 @@ export const getUserAddress = async (userId) => {
         user_addresses(
           where: {
             user_id: { _eq: $userId }
-            is_default: { _eq: true }
+            
           }
           limit: 1
         ) {
