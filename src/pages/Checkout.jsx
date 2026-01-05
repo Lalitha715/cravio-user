@@ -22,6 +22,7 @@ export default function Checkout() {
   const [user, setUser] = useState(null);
   const [address, setAddress] = useState(null);
   const [showAddressForm, setShowAddressForm] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState("cod"); // ✅ OPTION 2
   const [newAddress, setNewAddress] = useState({
     address_line: "",
     city: "",
@@ -46,8 +47,6 @@ export default function Checkout() {
 
       const addr = await getUserAddress(u.id);
       setAddress(addr);
-
-      // If no address, show "Add Address" button
       setShowAddressForm(!addr);
       setLoading(false);
     };
@@ -57,7 +56,10 @@ export default function Checkout() {
 
   const handleAddressSubmit = async (e) => {
     e.preventDefault();
-    if (!newAddress.address_line) return alert("Address is required");
+    if (!newAddress.address_line) {
+      alert("Address is required");
+      return;
+    }
 
     await upsertUserAddress({
       userId: user.id,
@@ -79,11 +81,18 @@ export default function Checkout() {
       return;
     }
 
+    // OPTION 2 – future online payment hook
+    if (paymentMethod === "online") {
+      alert("Online payment coming soon 🚧");
+      return;
+    }
+
     try {
       const order = await createOrder({
         user_id: user.id,
         total_amount: getTotal(),
         status: "pending",
+        payment_method: paymentMethod, // ✅ saved
       });
 
       const orderItems = cart.map((item) => ({
@@ -95,12 +104,10 @@ export default function Checkout() {
       }));
 
       await insertOrderItems(orderItems);
-
       await clearUserCart(user.id);
       clearCart();
 
-    
-      navigate("/success-order");
+      navigate("/success-order"); // ✅ Success page
     } catch (err) {
       console.error(err);
       alert("Failed to place order. Try again.");
@@ -119,9 +126,12 @@ export default function Checkout() {
         </h1>
 
         {cart.length === 0 ? (
-          <p className="text-center text-gray-400 mt-20">Your cart is empty 🛒</p>
+          <p className="text-center text-gray-400 mt-20">
+            Your cart is empty 🛒
+          </p>
         ) : (
           <>
+            {/* Cart Items */}
             <div className="space-y-4">
               {cart.map((item) => (
                 <div
@@ -134,17 +144,16 @@ export default function Checkout() {
                     className="w-20 h-20 rounded-xl object-cover"
                   />
                   <div className="flex-1">
-                    <h2 className="font-semibold text-gray-800 flex items-center gap-2">
+                    <h2 className="font-semibold text-gray-800">
                       {item.name}
-                      {item.is_veg ? (
-                        <span className="w-3 h-3 bg-green-600 rounded-full inline-block"></span>
-                      ) : (
-                        <span className="w-3 h-3 bg-red-600 rounded-full inline-block"></span>
-                      )}
                     </h2>
                     <p className="text-sm text-gray-500">₹{item.price}</p>
-                    <p className="text-xs text-gray-400">{item.restaurant_name}</p>
-                    <p className="text-xs text-gray-400">Qty: {item.quantity}</p>
+                    <p className="text-xs text-gray-400">
+                      {item.restaurant_name}
+                    </p>
+                    <p className="text-xs text-gray-400">
+                      Qty: {item.quantity}
+                    </p>
                   </div>
                 </div>
               ))}
@@ -152,7 +161,9 @@ export default function Checkout() {
 
             {/* Address Section */}
             <div className="bg-white rounded-2xl shadow-md p-4 mt-6">
-              <h2 className="font-semibold text-gray-700 mb-2">Delivery Address</h2>
+              <h2 className="font-semibold text-gray-700 mb-2">
+                Delivery Address
+              </h2>
 
               {address && !showAddressForm ? (
                 <>
@@ -164,87 +175,106 @@ export default function Checkout() {
                   </div>
                   <button
                     onClick={() => setShowAddressForm(true)}
-                    className="mt-2 py-2 px-4 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition"
+                    className="mt-2 py-2 px-4 bg-orange-500 text-white rounded-lg"
                   >
                     Change Address
                   </button>
                 </>
-              ) : !address && !showAddressForm ? (
-                <button
-                  onClick={() => setShowAddressForm(true)}
-                  className="py-2 px-4 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition"
-                >
-                  Add Address
-                </button>
-              ) : null}
-
-              {/* Address Form */}
-              {showAddressForm && (
-                <form onSubmit={handleAddressSubmit} className="mt-2 space-y-2">
-                  <input
-                    type="text"
-                    placeholder="Address Line"
-                    className="w-full px-3 py-2 border rounded-lg"
-                    value={newAddress.address_line}
-                    onChange={(e) =>
-                      setNewAddress({ ...newAddress, address_line: e.target.value })
-                    }
-                  />
-                  <input
-                    type="text"
-                    placeholder="City"
-                    className="w-full px-3 py-2 border rounded-lg"
-                    value={newAddress.city}
-                    onChange={(e) =>
-                      setNewAddress({ ...newAddress, city: e.target.value })
-                    }
-                  />
-                  <input
-                    type="text"
-                    placeholder="State"
-                    className="w-full px-3 py-2 border rounded-lg"
-                    value={newAddress.state}
-                    onChange={(e) =>
-                      setNewAddress({ ...newAddress, state: e.target.value })
-                    }
-                  />
-                  <input
-                    type="text"
-                    placeholder="Pincode"
-                    className="w-full px-3 py-2 border rounded-lg"
-                    value={newAddress.pincode}
-                    onChange={(e) =>
-                      setNewAddress({ ...newAddress, pincode: e.target.value })
-                    }
-                  />
-                  <div className="flex gap-2">
+              ) : (
+                showAddressForm && (
+                  <form
+                    onSubmit={handleAddressSubmit}
+                    className="space-y-2"
+                  >
+                    <input
+                      placeholder="Address Line"
+                      className="w-full border px-3 py-2 rounded-lg"
+                      value={newAddress.address_line}
+                      onChange={(e) =>
+                        setNewAddress({
+                          ...newAddress,
+                          address_line: e.target.value,
+                        })
+                      }
+                    />
+                    <input
+                      placeholder="City"
+                      className="w-full border px-3 py-2 rounded-lg"
+                      value={newAddress.city}
+                      onChange={(e) =>
+                        setNewAddress({
+                          ...newAddress,
+                          city: e.target.value,
+                        })
+                      }
+                    />
+                    <input
+                      placeholder="State"
+                      className="w-full border px-3 py-2 rounded-lg"
+                      value={newAddress.state}
+                      onChange={(e) =>
+                        setNewAddress({
+                          ...newAddress,
+                          state: e.target.value,
+                        })
+                      }
+                    />
+                    <input
+                      placeholder="Pincode"
+                      className="w-full border px-3 py-2 rounded-lg"
+                      value={newAddress.pincode}
+                      onChange={(e) =>
+                        setNewAddress({
+                          ...newAddress,
+                          pincode: e.target.value,
+                        })
+                      }
+                    />
                     <button
                       type="submit"
-                      className="flex-1 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition"
+                      className="w-full py-2 bg-orange-500 text-white rounded-lg"
                     >
                       Save Address
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => setShowAddressForm(false)}
-                      className="flex-1 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </form>
+                  </form>
+                )
               )}
             </div>
 
-            {/* Total + Place Order */}
-            <div className="bg-white rounded-2xl shadow-lg p-5 mt-6 sticky bottom-4">
+            {/* Payment Method – OPTION 2 */}
+            <div className="bg-white rounded-2xl shadow-md p-4 mt-6">
+              <h2 className="font-semibold text-gray-700 mb-3">
+                Payment Method
+              </h2>
+
+              <label className="flex items-center gap-3 mb-2">
+                <input
+                  type="radio"
+                  checked={paymentMethod === "cod"}
+                  onChange={() => setPaymentMethod("cod")}
+                />
+                Cash on Delivery
+              </label>
+
+              <label className="flex items-center gap-3">
+                <input
+                  type="radio"
+                  checked={paymentMethod === "online"}
+                  onChange={() => setPaymentMethod("online")}
+                />
+                Online Payment
+              </label>
+            </div>
+
+            {/* Total */}
+            <div className="bg-white rounded-2xl shadow-lg p-5 mt-6">
               <div className="flex justify-between font-semibold text-lg mb-4">
                 <span>Total</span>
                 <span>₹{getTotal()}</span>
               </div>
               <button
                 onClick={handlePlaceOrder}
-                className="w-full py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-red-500 to-pink-500 hover:opacity-90 transition"
+                className="w-full py-3 rounded-xl text-white bg-gradient-to-r from-red-500 to-pink-500"
               >
                 Place Order
               </button>
