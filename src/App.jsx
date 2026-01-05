@@ -11,6 +11,8 @@ import Orders from "./pages/Orders";
 import Search from "./pages/Search";
 import SuccessSignup from "./pages/Auth/SuccessSignup";
 import SuccessLogin from "./pages/Auth/SuccessLogin";
+import Checkout from "./pages/Checkout";
+import SuccessOrder from "./pages/SuccessOrder";
 
 export default function App() {
   return (
@@ -25,6 +27,8 @@ export default function App() {
         <Route path="/home" element={<Home />} />
         <Route path="/search" element={<Search />} />
         <Route path="/cart" element={<Cart/>}/>
+        <Route path="/checkout" element={<Checkout/>}/>
+        <Route path="/success-order" element={<SuccessOrder/>}/>
         <Route path="/orders" element={<Orders/>}/>
         <Route path="/profile" element={<Profile/>}/>
         <Route path="/restaurant/:id" element={<RestaurantMenu/>}/>

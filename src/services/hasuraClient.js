@@ -1,5 +1,5 @@
 // services/hasuraClient.js
-import { ApolloClient, InMemoryCache, HttpLink, gql } from "@apollo/client";
+import { ApolloClient, InMemoryCache, HttpLink } from "@apollo/client";
 
 export const client = new ApolloClient({
   link: new HttpLink({

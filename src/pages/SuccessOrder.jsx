@@ -1,0 +1,80 @@
+// src/pages/SuccessOrder.jsx
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import Header from "../components/Header";
+import BottomNav from "../components/BottomNav";
+import Confetti from "react-confetti";
+
+export default function SuccessOrder() {
+  const navigate = useNavigate();
+  const [showConfetti, setShowConfetti] = useState(true);
+
+  useEffect(() => {
+    // Play success sound (put your Arusuvai chime in public folder)
+    const audio = new Audio("/arusuvai-success.mp3");
+    audio.play().catch(() => {});
+
+    // Stop confetti after 4s and navigate to Orders page
+    const timer = setTimeout(() => {
+      setShowConfetti(false);
+      navigate("/orders");
+    }, 4000);
+
+    return () => clearTimeout(timer);
+  }, [navigate]);
+
+  return (
+    <>
+      <Header />
+
+      {/* Confetti animation */}
+      {showConfetti && <Confetti recycle={false} numberOfPieces={300} gravity={0.3} />}
+
+      <div className="min-h-screen flex flex-col justify-center items-center px-4 pt-24 pb-32 bg-gradient-to-b from-yellow-50 via-yellow-100 to-yellow-50">
+        <div className="bg-white rounded-3xl shadow-xl p-8 max-w-md w-full text-center border-4 border-orange-200 animate-pulse">
+          
+          {/* Animated checkmark */}
+          <div className="mx-auto w-28 h-28 mb-4 relative">
+            <svg
+              className="w-28 h-28 text-orange-500 animate-bounce"
+              viewBox="0 0 52 52"
+            >
+              <circle
+                className="stroke-current text-orange-300"
+                cx="26"
+                cy="26"
+                r="25"
+                fill="none"
+                strokeWidth="2"
+              />
+              <path
+                className="stroke-current text-orange-500"
+                fill="none"
+                strokeWidth="4"
+                d="M14 27l7 7 17-17"
+              />
+            </svg>
+          </div>
+
+          <h1 className="text-3xl font-extrabold mb-2 text-orange-600">
+            Order Placed 🎉
+          </h1>
+          <p className="text-gray-700 mb-4">
+            Your order has been successfully placed! <br />
+            Your craving food is on the way!!🍛🍲🍕
+          </p>
+
+          {/* Optional: CTA Button to Orders page */}
+          <button
+            onClick={() => navigate("/orders")}
+            className="mt-4 px-6 py-3 bg-gradient-to-r from-orange-400 to-red-500 text-white rounded-xl font-semibold shadow-lg hover:scale-105 transition-transform"
+          >
+            View Orders
+          </button>
+        </div>
+      </div>
+
+      <BottomNav />
+    </>
+  );
+}
