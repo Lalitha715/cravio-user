@@ -21,7 +21,7 @@ export default function Header() {
         {/* Right: Tagline (Mobile + Desktop) */}
         <div className="text-right">
           <p className="text-sm font-medium text-white leading-tight">
-            Multi-Restaurant Food,
+            Multi-Restaurant Food
           </p>
           <p className="text-xs text-white/90">
             One Tap Happiness 🤩🥳

@@ -7,6 +7,7 @@ import {
 import { Link, useNavigate } from "react-router-dom";
 import client from "../../apolloClient"; // Apollo client
 import { gql } from "@apollo/client";
+import toast from "react-hot-toast";
 
 export default function Signup() {
   const [name, setName] = useState(""); // ✅ New name field
@@ -29,26 +30,29 @@ export default function Signup() {
 
   const sendOtp = async () => {
     if (!name.trim()) {
-      alert("Enter your name");
+    toast.error("Enter your name");
       return;
     }
 
     if (number.length < 10) {
-      alert("Enter valid mobile number");
+      toast.error("Enter valid mobile number");
       return;
     }
 
     try {
       setLoading(true);
+      toast.loading("Sending OTP...");
       const res = await signInWithPhoneNumber(
         auth,
         `${countryCode}${number}`,
         window.recaptchaVerifier
       );
       setConfirmation(res);
-      alert("OTP Sent 📲");
+      toast.dismiss();
+      toast.success("OTP Sent 📲");
     } catch (err) {
-      alert(err.message);
+      toast.dismiss();
+      toast.error(err.message||"OTP sending failed");
     } finally {
       setLoading(false);
     }
@@ -79,6 +83,7 @@ export default function Signup() {
   const verifyOtp = async () => {
     try {
       setLoading(true);
+      toast.loading("Verifying OTP...");
       const result = await confirmation.confirm(otp);
       const fullPhone = result.user.phoneNumber;
 
@@ -87,10 +92,13 @@ export default function Signup() {
 
       // Save user in Hasura
       await saveUser(fullPhone);
+      toast.dismiss();
+      toast.success("Signup Successful 🎉");
 
       navigate("/signup-success", { state: { type: "signup" } });
     } catch {
-      alert("Invalid OTP");
+      toast.dismiss();
+      toast.error("Invalid OTP");
     } finally {
       setLoading(false);
     }

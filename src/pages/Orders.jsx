@@ -53,7 +53,7 @@ export default function Orders() {
     <div className="min-h-screen flex flex-col">
       <Header />
 
-      <div className="flex-1 flex flex-col items-center pt-20 px-4 w-full">
+      <div className="flex-1 flex flex-col items-center pt-20 px-4 w-full p-24">
         <h1 className="text-2xl font-extrabold mb-6 text-red-500">
           My Orders
         </h1>

@@ -13,12 +13,15 @@ import SuccessSignup from "./pages/Auth/SuccessSignup";
 import SuccessLogin from "./pages/Auth/SuccessLogin";
 import Checkout from "./pages/Checkout";
 import SuccessOrder from "./pages/SuccessOrder";
+import {Toaster} from "react-hot-toast";
 
 export default function App() {
   return (
     <ApolloProvider client={client}>
+      <Toaster position="top-center"/>
     <BrowserRouter>
       <Routes>
+        
         <Route path="/" element={<Signup />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/signup-success" element={<SuccessSignup/>}/>
