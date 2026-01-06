@@ -25,7 +25,7 @@ export default function SuccessOrder() {
     // ⏱ stop confetti + navigate
     const timer = setTimeout(() => {
       setShowConfetti(false);
-      navigate("/orders");
+      navigate("/orders", { replace: true });
     }, 4000);
 
     return () => {

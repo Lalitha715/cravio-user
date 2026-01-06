@@ -11,12 +11,11 @@ export default function Home() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [userName, setUserName] = useState(""); // ✅ State for logged-in user name
+  const [userName, setUserName] = useState("");
 
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Load user name from localStorage
     const name = localStorage.getItem("userName") || "";
     setUserName(name);
 
@@ -36,7 +35,7 @@ export default function Home() {
   }, []);
 
   const filteredRestaurants = restaurants.filter((res) =>
-    res.name.toLowerCase().includes(search.toLowerCase())
+    res.name?.toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -70,16 +69,12 @@ export default function Home() {
 
         {/* Loading */}
         {loading && (
-          <p className="text-center text-gray-400">
-            Loading restaurants...
-          </p>
+          <p className="text-center text-gray-400">Loading restaurants...</p>
         )}
 
         {/* Error */}
         {error && (
-          <p className="text-center text-red-500 font-medium">
-            {error}
-          </p>
+          <p className="text-center text-red-500 font-medium">{error}</p>
         )}
 
         {/* Restaurant List */}
@@ -90,15 +85,13 @@ export default function Home() {
                 No restaurants found 🍽️
               </p>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 {filteredRestaurants.map((res) => (
-                  <div
+                  <RestaurantCard
                     key={res.id}
+                    restaurant={res}
                     onClick={() => navigate(`/restaurant/${res.id}`)}
-                    className="cursor-pointer transform transition hover:-translate-y-1"
-                  >
-                    <RestaurantCard restaurant={res} />
-                  </div>
+                  />
                 ))}
               </div>
             )}

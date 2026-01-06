@@ -5,6 +5,7 @@ import { fetchDishesByRestaurant } from "../api/hasura";
 import Header from "../components/Header";
 import BottomNav from "../components/BottomNav";
 import FoodCard from "../components/FoodCard";
+import FloatingCartButton from "../components/CartButton";
 
 export default function RestaurantMenu() {
   const { id } = useParams();
@@ -164,7 +165,7 @@ export default function RestaurantMenu() {
           ))}
         </div>
       </div>
-
+      <FloatingCartButton/>
       <BottomNav />
     </>
   );

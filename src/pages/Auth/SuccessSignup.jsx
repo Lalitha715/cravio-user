@@ -7,7 +7,7 @@ export default function SuccessSignup() {
     const navigate = useNavigate();
     useEffect(() => {
         const timer = setTimeout(() => {
-            navigate("/home");
+            navigate("/home",{replace:true});
         }, 2500); // 2.5 seconds
 
         return () => clearTimeout(timer);

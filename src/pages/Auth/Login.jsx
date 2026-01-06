@@ -7,6 +7,7 @@ import {
 import { Link, useNavigate } from "react-router-dom";
 import client from "../../apolloClient"; // Apollo client
 import { gql } from "@apollo/client";
+import toast from "react-hot-toast";
 
 export default function Login() {
   const [countryCode, setCountryCode] = useState("+91");
@@ -28,21 +29,24 @@ export default function Login() {
 
   const sendOtp = async () => {
     if (number.length < 10) {
-      alert("Enter valid mobile number");
+      toast.error("Enter valid mobile number");
       return;
     }
 
     try {
       setLoading(true);
+      toast.loading("Sending OTP...");
       const res = await signInWithPhoneNumber(
         auth,
         `${countryCode}${number}`,
         window.recaptchaVerifier
       );
       setConfirmation(res);
-      alert("OTP Sent 📲");
+      toast.dismiss();
+      toast.success("OTP Sent 📲");
     } catch (err) {
-      alert(err.message);
+      toast.dismiss();
+      toast.error(err.message);
     } finally {
       setLoading(false);
     }
@@ -86,7 +90,8 @@ export default function Login() {
 
       navigate("/login-success", { state: { type: "login" } } );
     } catch {
-      alert("Invalid OTP");
+      toast.dismiss();
+      toast.error("Invalid OTP");
     } finally {
       setLoading(false);
     }
