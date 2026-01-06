@@ -1,6 +1,6 @@
 import { useCart } from "../context/CartContext";
 import { useNavigate } from "react-router-dom";
-
+import { IoCartOutline } from "react-icons/io5";
 export default function FloatingCartButton() {
   const { totalItems } = useCart();
   const navigate = useNavigate();
@@ -16,7 +16,7 @@ export default function FloatingCartButton() {
         flex items-center gap-2
         animate-bounce hover:scale-105 transition-transform"
     >
-      🛒
+      <IoCartOutline size={22} />
       <span className="font-semibold">{totalItems}</span>
     </button>
   );

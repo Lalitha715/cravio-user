@@ -6,6 +6,7 @@ import Header from "../components/Header";
 import BottomNav from "../components/BottomNav";
 import FoodCard from "../components/FoodCard";
 import FloatingCartButton from "../components/CartButton";
+import { IoArrowBack } from "react-icons/io5";
 
 export default function RestaurantMenu() {
   const { id } = useParams();
@@ -78,9 +79,14 @@ export default function RestaurantMenu() {
         <div className="flex items-center gap-3 mb-4">
           <button
             onClick={() => navigate(-1)}
-            className="text-orange-600 font-semibold"
+            className="flex items-center gap-2
+             px-3 py-2 rounded-xl
+             bg-green-50 text-pink-800
+             font-bold text-lg
+             border border-pink-200
+             hover:bg-pink-100 transition"
           >
-            ← Back
+           <IoArrowBack size={26} />
           </button>
 
           <h1 className="text-2xl font-bold">
