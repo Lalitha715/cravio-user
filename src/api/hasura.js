@@ -47,22 +47,30 @@ export const getUserByPhone = async (phone) => {
 ========================= */
 
 export const fetchRestaurants = async () => {
-  const { data } = await client.query({
-    query: gql`
-      query {
-        restaurants {
-          id
-          name
-          address
-          image_url
-          hygiene_rating
+  try {
+    const { data } = await client.query({
+      query: gql`
+        query {
+          restaurants {
+            id
+            name
+            address
+            image_url
+            hygiene_rating
+            open_time
+            close_time
+          }
         }
-      }
-    `,
-    fetchPolicy: "no-cache",
-  });
+      `,
+      fetchPolicy: "no-cache",
+    });
 
-  return data.restaurants;
+    console.log("Fetched restaurants:", data.restaurants);
+    return data.restaurants || [];
+  } catch (err) {
+    console.error("Error fetching restaurants:", err);
+    return [];
+  }
 };
 
 /* =========================

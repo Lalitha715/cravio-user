@@ -1,4 +1,3 @@
-// src/pages/Home.jsx
 import React, { useEffect, useState } from "react";
 import { fetchRestaurants } from "../api/hasura";
 import Header from "../components/Header";
@@ -22,7 +21,9 @@ export default function Home() {
     const loadRestaurants = async () => {
       try {
         const data = await fetchRestaurants();
-        setRestaurants(data || []);
+        console.log("Restaurants fetched in Home.jsx:", data);
+        if (!data || data.length === 0) setError("No restaurants found 🍽️");
+        setRestaurants(data);
       } catch (err) {
         console.error(err);
         setError("Failed to load restaurants 😕");
@@ -68,12 +69,10 @@ export default function Home() {
         </div>
 
         {/* Loading */}
-        {loading && (
-          <p className="text-center text-gray-400">Loading restaurants...</p>
-        )}
+        {loading && <p className="text-center text-gray-400">Loading restaurants...</p>}
 
         {/* Error */}
-        {error && (
+        {!loading && error && (
           <p className="text-center text-red-500 font-medium">{error}</p>
         )}
 
@@ -81,9 +80,7 @@ export default function Home() {
         {!loading && !error && (
           <>
             {filteredRestaurants.length === 0 ? (
-              <p className="text-center text-gray-400">
-                No restaurants found 🍽️
-              </p>
+              <p className="text-center text-gray-400">No restaurants found 🍽️</p>
             ) : (
               <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-4">
                 {filteredRestaurants.map((res) => (

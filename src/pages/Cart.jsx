@@ -58,11 +58,6 @@ export default function Cart() {
                   <div>
                     <h2 className="font-semibold text-gray-800 flex items-center gap-2">
                       {item.name}
-                      {item.is_veg ? (
-                        <span className="inline-block w-3 h-3 bg-green-600 rounded-full"></span>
-                      ) : (
-                        <span className="inline-block w-3 h-3 bg-red-600 rounded-full"></span>
-                      )}
                     </h2>
                     <p className="text-sm text-gray-500">₹{item.price}</p>
                     <p className="text-xs text-gray-400">{item.restaurant_name}</p>
