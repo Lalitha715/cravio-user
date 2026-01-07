@@ -4,6 +4,8 @@ import Header from "../components/Header";
 import BottomNav from "../components/BottomNav";
 import RestaurantCard from "../components/RestaurantCard";
 import { useNavigate } from "react-router-dom";
+import FloatingCartButton from "../components/CartButton";
+
 
 export default function Home() {
   const [restaurants, setRestaurants] = useState([]);
@@ -47,7 +49,7 @@ export default function Home() {
         {/* Welcome Message */}
         {userName && (
           <h2 className="text-xl font-semibold mb-4 text-center text-green-600">
-            Welcome, {userName} 👋
+            Welcome, {userName} 
           </h2>
         )}
 
@@ -95,7 +97,7 @@ export default function Home() {
           </>
         )}
       </div>
-
+      <FloatingCartButton />
       <BottomNav />
     </>
   );
