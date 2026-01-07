@@ -51,7 +51,7 @@ export const fetchRestaurants = async () => {
     const { data } = await client.query({
       query: gql`
         query {
-          restaurants {
+          restaurants(order_by: { name: asc }) {
             id
             name
             address

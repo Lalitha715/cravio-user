@@ -39,9 +39,12 @@ export default function RestaurantCard({ restaurant, onClick }) {
     const closeTime = new Date();
     closeTime.setHours(closeH, closeM, 0, 0);
 
-    if (!openTime || !closeTime) return true;
+    if (closeTime <= openTime) {
+      // If current time is before closeTime (after midnight) or after openTime
+      return now >= openTime || now <= closeTime;
+    }
 
-  
+
 
     return now >= openTime && now <= closeTime;
   };
