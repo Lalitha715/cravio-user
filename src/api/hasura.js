@@ -199,6 +199,7 @@ export const createOrder = async ({ user_id, total_amount, status = "pending" })
       mutation CreateOrder($order: orders_insert_input!) {
         insert_orders_one(object: $order) {
           id
+          address_id
           order_number
           total_amount
           status
@@ -341,14 +342,30 @@ export const upsertUserAddress = async ({
   state,
   pincode,
 }) => {
+  // 1️⃣ Reset old default
   await client.mutate({
     mutation: gql`
-      mutation UpsertUserAddress(
+      mutation ResetDefaultAddress($userId: uuid!) {
+        update_user_addresses(
+          where: { user_id: { _eq: $userId }, is_default: { _eq: true } }
+          _set: { is_default: false }
+        ) {
+          affected_rows
+        }
+      }
+    `,
+    variables: { userId },
+  });
+
+  // 2️⃣ Insert new default address
+  const { data } = await client.mutate({
+    mutation: gql`
+      mutation InsertUserAddress(
         $userId: uuid!
-        $address_line: text!
-        $city: text
-        $state: text
-        $pincode: text
+        $address_line: String!
+        $city: String
+        $state: String
+        $pincode: String
       ) {
         insert_user_addresses_one(
           object: {
@@ -360,21 +377,18 @@ export const upsertUserAddress = async ({
             pincode: $pincode
             is_default: true
           }
-          on_conflict: {
-            constraint: user_addresses_user_id_is_default_key
-            update_columns: [
-              address_line
-              city
-              state
-              pincode
-            ]
-          }
         ) {
           id
+          address_line
+          city
+          state
+          pincode
+          is_default
         }
       }
     `,
     variables: { userId, address_line, city, state, pincode },
   });
-};
 
+  return data.insert_user_addresses_one;
+};

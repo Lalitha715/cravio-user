@@ -22,7 +22,7 @@ export default function Checkout() {
   const [user, setUser] = useState(null);
   const [address, setAddress] = useState(null);
   const [showAddressForm, setShowAddressForm] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState("cod"); // ✅ OPTION 2
+  const [paymentMethod, setPaymentMethod] = useState("cod");
   const [newAddress, setNewAddress] = useState({
     address_line: "",
     city: "",
@@ -31,6 +31,7 @@ export default function Checkout() {
   });
   const [loading, setLoading] = useState(true);
 
+  // -------------------- Load user + address --------------------
   useEffect(() => {
     const loadUser = async () => {
       if (!userPhone) {
@@ -46,7 +47,7 @@ export default function Checkout() {
       setUser(u);
 
       const addr = await getUserAddress(u.id);
-      setAddress(addr);
+      setAddress(addr || null);
       setShowAddressForm(!addr);
       setLoading(false);
     };
@@ -54,34 +55,43 @@ export default function Checkout() {
     loadUser();
   }, [userPhone, navigate]);
 
+  // -------------------- Handle Save Address --------------------
   const handleAddressSubmit = async (e) => {
-    e.preventDefault();
-    if (!newAddress.address_line) {
-      alert("Address is required");
-      return;
-    }
+  e.preventDefault();
 
-    await upsertUserAddress({
+  if (!newAddress.address_line) {
+    alert("Address is required");
+    return;
+  }
+
+  try {
+    const updatedAddress = await upsertUserAddress({
       userId: user.id,
       ...newAddress,
     });
 
-    const addr = await getUserAddress(user.id);
-    setAddress(addr);
-    setShowAddressForm(false);
+    if (updatedAddress) {
+      setAddress({ ...updatedAddress });
+      setShowAddressForm(false);
+    }
+
     setNewAddress({ address_line: "", city: "", state: "", pincode: "" });
-  };
+  } catch (err) {
+    console.error(err);
+    alert("Address save failed");
+  }
+};
 
   const getTotal = () =>
     cart.reduce((sum, item) => sum + item.quantity * item.price, 0);
 
+  // -------------------- Place Order --------------------
   const handlePlaceOrder = async () => {
     if (!address) {
       alert("Please add an address first");
       return;
     }
 
-    // OPTION 2 – future online payment hook
     if (paymentMethod === "online") {
       alert("Online payment coming soon 🚧");
       return;
@@ -90,9 +100,10 @@ export default function Checkout() {
     try {
       const order = await createOrder({
         user_id: user.id,
+        address_id: address.id,
         total_amount: getTotal(),
         status: "pending",
-        payment_method: paymentMethod, // ✅ saved
+        payment_method: paymentMethod,
       });
 
       const orderItems = cart.map((item) => ({
@@ -107,7 +118,7 @@ export default function Checkout() {
       await clearUserCart(user.id);
       clearCart();
 
-      navigate("/success-order"); // ✅ Success page
+      navigate("/success-order");
     } catch (err) {
       console.error(err);
       alert("Failed to place order. Try again.");
@@ -116,6 +127,7 @@ export default function Checkout() {
 
   if (loading) return <p className="pt-24 text-center">Loading...</p>;
 
+  // -------------------- RENDER --------------------
   return (
     <>
       <Header />
@@ -144,16 +156,10 @@ export default function Checkout() {
                     className="w-20 h-20 rounded-xl object-cover"
                   />
                   <div className="flex-1">
-                    <h2 className="font-semibold text-gray-800">
-                      {item.name}
-                    </h2>
+                    <h2 className="font-semibold text-gray-800">{item.name}</h2>
                     <p className="text-sm text-gray-500">₹{item.price}</p>
-                    <p className="text-xs text-gray-400">
-                      {item.restaurant_name}
-                    </p>
-                    <p className="text-xs text-gray-400">
-                      Qty: {item.quantity}
-                    </p>
+                    <p className="text-xs text-gray-400">{item.restaurant_name}</p>
+                    <p className="text-xs text-gray-400">Qty: {item.quantity}</p>
                   </div>
                 </div>
               ))}
@@ -165,9 +171,11 @@ export default function Checkout() {
                 Delivery Address
               </h2>
 
+              
+
               {address && !showAddressForm ? (
                 <>
-                  <div className="text-gray-600 text-sm">
+                  <div key={address?.id} className="text-gray-600 text-sm">
                     <p>{address.address_line}</p>
                     <p>
                       {address.city}, {address.state} - {address.pincode}
@@ -182,19 +190,13 @@ export default function Checkout() {
                 </>
               ) : (
                 showAddressForm && (
-                  <form
-                    onSubmit={handleAddressSubmit}
-                    className="space-y-2"
-                  >
+                  <form onSubmit={handleAddressSubmit} className="space-y-2">
                     <input
                       placeholder="Address Line"
                       className="w-full border px-3 py-2 rounded-lg"
                       value={newAddress.address_line}
                       onChange={(e) =>
-                        setNewAddress({
-                          ...newAddress,
-                          address_line: e.target.value,
-                        })
+                        setNewAddress({ ...newAddress, address_line: e.target.value })
                       }
                     />
                     <input
@@ -202,10 +204,7 @@ export default function Checkout() {
                       className="w-full border px-3 py-2 rounded-lg"
                       value={newAddress.city}
                       onChange={(e) =>
-                        setNewAddress({
-                          ...newAddress,
-                          city: e.target.value,
-                        })
+                        setNewAddress({ ...newAddress, city: e.target.value })
                       }
                     />
                     <input
@@ -213,10 +212,7 @@ export default function Checkout() {
                       className="w-full border px-3 py-2 rounded-lg"
                       value={newAddress.state}
                       onChange={(e) =>
-                        setNewAddress({
-                          ...newAddress,
-                          state: e.target.value,
-                        })
+                        setNewAddress({ ...newAddress, state: e.target.value })
                       }
                     />
                     <input
@@ -224,10 +220,7 @@ export default function Checkout() {
                       className="w-full border px-3 py-2 rounded-lg"
                       value={newAddress.pincode}
                       onChange={(e) =>
-                        setNewAddress({
-                          ...newAddress,
-                          pincode: e.target.value,
-                        })
+                        setNewAddress({ ...newAddress, pincode: e.target.value })
                       }
                     />
                     <button
@@ -241,11 +234,9 @@ export default function Checkout() {
               )}
             </div>
 
-            {/* Payment Method – OPTION 2 */}
+            {/* Payment Method */}
             <div className="bg-white rounded-2xl shadow-md p-4 mt-6">
-              <h2 className="font-semibold text-gray-700 mb-3">
-                Payment Method
-              </h2>
+              <h2 className="font-semibold text-gray-700 mb-3">Payment Method</h2>
 
               <label className="flex items-center gap-3 mb-2">
                 <input
