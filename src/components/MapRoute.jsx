@@ -26,7 +26,7 @@ const MapRoute = ({ restaurant }) => {
 
   // 🟢 2. Map Load + Route Draw
   useEffect(() => {
-    if (!userLocation) return;
+    if (!userLocation || !restaurant?.lat || !restaurant?.lng) return;
 
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
@@ -35,7 +35,6 @@ const MapRoute = ({ restaurant }) => {
       zoom: 12,
     });
 
-    // Directions Plugin
     const directions = new MapboxDirections({
       accessToken: mapboxgl.accessToken,
       unit: "metric",
@@ -44,16 +43,18 @@ const MapRoute = ({ restaurant }) => {
 
     map.current.addControl(directions, "top-left");
 
-    // Start = User
     directions.setOrigin([userLocation.lng, userLocation.lat]);
 
-    // End = Restaurant
     directions.setDestination([
       restaurant.lng,
       restaurant.lat,
     ]);
 
-  }, [userLocation]);
+    return () => {
+      map.current?.remove();   // 👈 cleanup (very important)
+    };
+
+  }, [userLocation, restaurant]);   // 👈 dependency fixed
 
   return (
     <div className="w-full h-[500px] rounded-xl shadow">
