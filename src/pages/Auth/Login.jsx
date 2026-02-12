@@ -52,15 +52,15 @@ export default function Login() {
     }
   };
 
-  // ✅ Fetch user name from Hasura after OTP verification
-  const fetchUserName = async (phone) => {
+  const fetchUser = async (phone) => {
     const query = gql`
-      query GetUserByPhone($phone: String!) {
-        users(where: { phone: { _eq: $phone } }) {
-          name
-        }
+    query GetUserByPhone($phone: String!) {
+      users(where: { phone: { _eq: $phone } }) {
+        id
+        name
       }
-    `;
+    }
+  `;
 
     try {
       const res = await client.query({
@@ -69,9 +69,9 @@ export default function Login() {
         fetchPolicy: "no-cache",
       });
 
-      return res.data.users[0]?.name || "";
+      return res.data.users[0] || "";
     } catch (err) {
-      console.error("Error fetching user name:", err);
+      console.error("Error fetching user :", err);
       return "";
     }
   };
@@ -84,11 +84,17 @@ export default function Login() {
       const fullPhone = `${countryCode}${number}`;
       localStorage.setItem("userPhone", fullPhone);
 
-      // ✅ Fetch name and store
-      const userName = await fetchUserName(fullPhone);
-      localStorage.setItem("userName", userName);
+      const user = await fetchUser(fullPhone);
 
-      navigate("/login-success", { state: { type: "login" } } );
+      if (user&&user.id) {
+        localStorage.setItem("userId", user.id);   // 🔥 IMPORTANT
+        localStorage.setItem("userName", user.name||"");
+      }else {
+        console.log("No user found with phone:");
+      }
+
+
+      navigate("/login-success", { state: { type: "login" } });
     } catch {
       toast.dismiss();
       toast.error("Invalid OTP");

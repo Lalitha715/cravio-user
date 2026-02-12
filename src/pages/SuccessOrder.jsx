@@ -1,14 +1,16 @@
 // src/pages/SuccessOrder.jsx
 import React, { useEffect, useState, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import Header from "../components/Header";
 import BottomNav from "../components/BottomNav";
 import Confetti from "react-confetti";
 
 export default function SuccessOrder() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [showConfetti, setShowConfetti] = useState(true);
   const audioRef = useRef(null);
+  const id = location.state?.id||"test123";
 
   useEffect(() => {
     // 🔊 MP3 sound (Option 2)
@@ -21,18 +23,20 @@ export default function SuccessOrder() {
       .catch(() => {
         console.log("Autoplay blocked by browser");
       });
-
-    // ⏱ stop confetti + navigate
+    if (!id) {
+      console.log("Order Id is missing");
+      return;
+    }
     const timer = setTimeout(() => {
       setShowConfetti(false);
-      navigate("/orders", { replace: true });
+      navigate(`/track-order/${id}`, { replace: true });
     }, 4000);
 
     return () => {
       clearTimeout(timer);
       audioRef.current && audioRef.current.pause();
     };
-  }, [navigate]);
+  }, [navigate,id]);
 
   return (
     <>
@@ -81,3 +85,5 @@ export default function SuccessOrder() {
     </>
   );
 }
+
+

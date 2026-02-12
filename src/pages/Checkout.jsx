@@ -118,7 +118,7 @@ export default function Checkout() {
       await clearUserCart(user.id);
       clearCart();
 
-      navigate("/success-order");
+      navigate("/success-order",{ state: { id: order.id } });
     } catch (err) {
       console.error(err);
       alert("Failed to place order. Try again.");

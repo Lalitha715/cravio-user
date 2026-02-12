@@ -242,9 +242,17 @@ export const fetchUserOrders = async (userId) => {
             id
             quantity
             price
-            dish { id name }
-            restaurant { id name }
+            dish { 
+              id
+              name
+            restaurant { 
+            id
+            name
+            latitude
+            longitude
+            }
           }
+  }
         }
       }
     `,
@@ -262,7 +270,7 @@ export const fetchUserOrders = async (userId) => {
       quantity: item.quantity,
       price: item.price,
       dish: item.dish,
-      restaurant: item.restaurant,
+      restaurant: item.dish?.restaurant,
     })),
   }));
 };

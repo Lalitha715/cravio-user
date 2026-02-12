@@ -14,6 +14,7 @@ import SuccessLogin from "./pages/Auth/SuccessLogin";
 import Checkout from "./pages/Checkout";
 import SuccessOrder from "./pages/SuccessOrder";
 import { Toaster } from "react-hot-toast";
+import TrackOrder from "./pages/TrackOrder";
 
 import AddRestaurant from "./pages/owner/AddRestaurant";
 import MyRestaurants from "./pages/owner/MyRestaurants";
@@ -44,6 +45,7 @@ export default function App() {
           <Route path="/orders" element={<Orders />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/restaurant/:id" element={<RestaurantMenu />} />
+          <Route path="/track-order/:id" element={<TrackOrder />} />
 
           <Route path="/owner/add-restaurant" element={<AddRestaurant currentUser={currentUser} />} />
           <Route path="/owner/my-restaurants" element={<MyRestaurants currentUser={currentUser} />} />
