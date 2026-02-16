@@ -14,6 +14,8 @@ import {
   clearUserCart,
 } from "../api/hasura";
 
+/* global Razorpay */
+
 export default function Checkout() {
   const { cart, clearCart } = useCart();
   const navigate = useNavigate();
@@ -31,7 +33,6 @@ export default function Checkout() {
   });
   const [loading, setLoading] = useState(true);
 
-  // -------------------- Load user + address --------------------
   useEffect(() => {
     const loadUser = async () => {
       if (!userPhone) {
@@ -55,32 +56,27 @@ export default function Checkout() {
     loadUser();
   }, [userPhone, navigate]);
 
-  // -------------------- Handle Save Address --------------------
   const handleAddressSubmit = async (e) => {
-  e.preventDefault();
-
-  if (!newAddress.address_line) {
-    alert("Address is required");
-    return;
-  }
-
-  try {
-    const updatedAddress = await upsertUserAddress({
-      userId: user.id,
-      ...newAddress,
-    });
-
-    if (updatedAddress) {
-      setAddress({ ...updatedAddress });
-      setShowAddressForm(false);
+    e.preventDefault();
+    if (!newAddress.address_line) {
+      alert("Address is required");
+      return;
     }
-
-    setNewAddress({ address_line: "", city: "", state: "", pincode: "" });
-  } catch (err) {
-    console.error(err);
-    alert("Address save failed");
-  }
-};
+    try {
+      const updatedAddress = await upsertUserAddress({
+        userId: user.id,
+        ...newAddress,
+      });
+      if (updatedAddress) {
+        setAddress({ ...updatedAddress });
+        setShowAddressForm(false);
+      }
+      setNewAddress({ address_line: "", city: "", state: "", pincode: "" });
+    } catch (err) {
+      console.error(err);
+      alert("Address save failed");
+    }
+  };
 
   const getTotal = () =>
     cart.reduce((sum, item) => sum + item.quantity * item.price, 0);
@@ -92,16 +88,75 @@ export default function Checkout() {
       return;
     }
 
+    const totalAmount = getTotal(); // ₹ amount
+
+    // -------------------- Online Payment Flow --------------------
     if (paymentMethod === "online") {
-      alert("Online payment coming soon 🚧");
+      try {
+        // 1️⃣ Call backend to create Razorpay order
+        const res = await fetch("http://localhost:3000/create-order"
+, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ amount: totalAmount }),
+        });
+
+        const orderData = await res.json();
+
+        // 2️⃣ Open Razorpay checkout
+        const options = {
+          key: "rzp_test_SGh1UwVFh4saU0", // Razorpay standard plan key
+          amount: orderData.amount,
+          currency: "INR",
+          name: "Cravio User",
+          description: "Food Order Payment",
+          order_id: orderData.id,
+          handler: async function (response) {
+            // Payment successful, save order in DB
+            const order = await createOrder({
+              user_id: user.id,
+              address_id: address.id,
+              total_amount: totalAmount,
+              status: "paid",
+              payment_method: paymentMethod,
+              payment_id: response.razorpay_payment_id,
+            });
+
+            const orderItems = cart.map((item) => ({
+              order_id: order.id,
+              dish_id: item.id,
+              quantity: item.quantity,
+              price: item.price,
+              restaurant_id: item.restaurant_id,
+            }));
+
+            await insertOrderItems(orderItems);
+            await clearUserCart(user.id);
+            clearCart();
+            navigate("/success-order", { state: { id: order.id } });
+          },
+          prefill: {
+            email: `${userPhone}@temp.com`,
+            contact: userPhone,
+          },
+          theme: { color: "#F87060" },
+        };
+
+        const rzp = new Razorpay(options);
+        rzp.open();
+      } catch (err) {
+        console.error(err);
+        alert("Payment failed. Try again.");
+      }
       return;
     }
 
+    // -------------------- COD Flow (unchanged) --------------------
     try {
       const order = await createOrder({
         user_id: user.id,
         address_id: address.id,
-        total_amount: getTotal(),
+        total_amount: totalAmount,
         status: "pending",
         payment_method: paymentMethod,
       });
@@ -117,8 +172,7 @@ export default function Checkout() {
       await insertOrderItems(orderItems);
       await clearUserCart(user.id);
       clearCart();
-
-      navigate("/success-order",{ state: { id: order.id } });
+      navigate("/success-order", { state: { id: order.id } });
     } catch (err) {
       console.error(err);
       alert("Failed to place order. Try again.");
@@ -127,11 +181,9 @@ export default function Checkout() {
 
   if (loading) return <p className="pt-24 text-center">Loading...</p>;
 
-  // -------------------- RENDER --------------------
   return (
     <>
       <Header />
-
       <div className="min-h-screen px-4 pt-24 pb-32 max-w-md mx-auto">
         <h1 className="text-2xl font-bold mb-6 text-center bg-gradient-to-r from-red-500 to-pink-500 text-transparent bg-clip-text">
           Checkout
@@ -170,8 +222,6 @@ export default function Checkout() {
               <h2 className="font-semibold text-gray-700 mb-2">
                 Delivery Address
               </h2>
-
-              
 
               {address && !showAddressForm ? (
                 <>
