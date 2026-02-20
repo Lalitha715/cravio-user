@@ -2,10 +2,13 @@ import { useCart } from "../context/CartContext";
 import BottomNav from "../components/BottomNav";
 import Header from "../components/Header";
 import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 
 export default function Cart() {
-  const { cart, updateQuantity, removeFromCart } = useCart(); // removed clearCart
+  const { cart, updateQuantity, removeFromCart } = useCart();
   const navigate = useNavigate();
+
+  const [aiSuggestions, setAiSuggestions] = useState("");
 
   const increaseQty = (item) => {
     updateQuantity(item.id, item.restaurant_id, item.quantity + 1);
@@ -13,7 +16,7 @@ export default function Cart() {
 
   const decreaseQty = (item) => {
     if (item.quantity === 1) {
-      removeFromCart(item.id, item.restaurant_id); // remove if 1 → 0
+      removeFromCart(item.id, item.restaurant_id);
       return;
     }
     updateQuantity(item.id, item.restaurant_id, item.quantity - 1);
@@ -21,6 +24,47 @@ export default function Cart() {
 
   const getTotal = () =>
     cart.reduce((sum, item) => sum + item.quantity * item.price, 0);
+
+  // 🔥 AI Integration (No flow change)
+  useEffect(() => {
+    const fetchAISuggestions = async () => {
+      if (cart.length === 0) {
+        setAiSuggestions("");
+        return;
+      }
+
+      try {
+        const firstItem = cart[0];
+
+        const response = await fetch(
+          "http://localhost:3000/api/ai/recommendations",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              item: firstItem.name,
+              history: cart.map((item) => item.name).join(", "),
+            }),
+          }
+        );
+
+        const data = await response.json();
+
+        if (data.suggestions) {
+          setAiSuggestions(data.suggestions);
+        } else {
+          setAiSuggestions("");
+        }
+      } catch (error) {
+        console.error("AI Error:", error);
+        setAiSuggestions("");
+      }
+    };
+
+    fetchAISuggestions();
+  }, [cart]);
 
   return (
     <>
@@ -56,11 +100,13 @@ export default function Cart() {
 
                 <div className="flex-1 flex flex-col justify-between">
                   <div>
-                    <h2 className="font-semibold text-gray-800 flex items-center gap-2">
+                    <h2 className="font-semibold text-gray-800">
                       {item.name}
                     </h2>
                     <p className="text-sm text-gray-500">₹{item.price}</p>
-                    <p className="text-xs text-gray-400">{item.restaurant_name}</p>
+                    <p className="text-xs text-gray-400">
+                      {item.restaurant_name}
+                    </p>
                   </div>
 
                   <div className="flex items-center gap-3 mt-3">
@@ -83,7 +129,9 @@ export default function Cart() {
                 </div>
 
                 <button
-                  onClick={() => removeFromCart(item.id, item.restaurant_id)}
+                  onClick={() =>
+                    removeFromCart(item.id, item.restaurant_id)
+                  }
                   className="absolute top-2 right-2 text-red-500 text-sm font-medium"
                 >
                   ✕
@@ -92,6 +140,19 @@ export default function Cart() {
             ))}
 
             <div className="bg-white rounded-2xl shadow-lg p-5 mt-6 sticky bottom-4">
+              
+              {/* 🔥 AI Suggestions Section */}
+              {aiSuggestions && (
+                <div className="mb-4 p-3 bg-yellow-50 rounded-xl border border-yellow-200">
+                  <h3 className="font-semibold text-sm text-gray-700 mb-1">
+                    🤖 AI Recommended For You
+                  </h3>
+                  <p className="text-sm text-gray-600 whitespace-pre-line">
+                    {aiSuggestions}
+                  </p>
+                </div>
+              )}
+
               <div className="flex justify-between font-semibold text-lg mb-4">
                 <span>Total</span>
                 <span>₹{getTotal()}</span>
