@@ -42,7 +42,7 @@ export default function TrackOrder() {
     if (loading) return <p>Loading...</p>;
     if (!order) return <p>Order not found</p>;
 
-    const restaurant = order.items?.[0]?.restaurant;
+    const restaurant = order.order_items?.[0]?.restaurant;
 
     if (!restaurant?.latitude || !restaurant?.longitude) {
         return <p>No location available for this restaurant</p>;

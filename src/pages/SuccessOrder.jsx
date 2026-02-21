@@ -8,6 +8,7 @@ import Confetti from "react-confetti";
 export default function SuccessOrder() {
   const navigate = useNavigate();
   const location = useLocation();
+  const restaurant = location.state?.restaurant || { name: "the restaurant" };
   const [showConfetti, setShowConfetti] = useState(true);
   const audioRef = useRef(null);
   const id = location.state?.id||"test123";

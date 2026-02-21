@@ -25,23 +25,32 @@ export default function RestaurantMenu() {
   useEffect(() => {
     const loadMenu = async () => {
       try {
-        const data = await fetchDishesByRestaurant(id);
+        setLoading(true);
 
+        const dishesData = await fetchDishesByRestaurant(id);
+
+        console.log("Fetched Dishes:", dishesData);
+
+        // Since API returns only array
+        setDishes(dishesData || []);
+
+        // Simple restaurant info (without changing flow)
         setRestaurant({
-          id: data.id,
-          name: data.name,
+          id: id,
+          name: "Restaurant Menu",
         });
 
-        setDishes(data.dishes || []);
       } catch (err) {
-        console.error(err);
+        console.error("Menu Load Error:", err);
         setError("Failed to load menu");
       } finally {
         setLoading(false);
       }
     };
 
-    loadMenu();
+    if (id) {
+      loadMenu();
+    }
   }, [id]);
 
   // Cuisine list
@@ -86,7 +95,7 @@ export default function RestaurantMenu() {
              border border-pink-200
              hover:bg-pink-100 transition"
           >
-           <IoArrowBack size={26} />
+            <IoArrowBack size={26} />
           </button>
 
           <h1 className="text-2xl font-bold">
@@ -123,7 +132,7 @@ export default function RestaurantMenu() {
                 ))}
               </select>
 
-              {/* Food Type Toggle: All / Veg / Non-Veg */}
+              {/* Food Type Toggle */}
               <div className="flex gap-2">
                 {["All", "Veg", "Non-Veg"].map((type) => (
                   <button
@@ -171,7 +180,8 @@ export default function RestaurantMenu() {
           ))}
         </div>
       </div>
-      <FloatingCartButton/>
+
+      <FloatingCartButton />
       <BottomNav />
     </>
   );

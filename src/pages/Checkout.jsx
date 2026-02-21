@@ -33,6 +33,29 @@ export default function Checkout() {
   });
   const [loading, setLoading] = useState(true);
 
+  // 🔥 Google Geocode Function
+  const getLatLngFromAddress = async (fullAddress) => {
+    const API_KEY = "YOUR_GOOGLE_MAPS_API_KEY";
+
+    const response = await fetch(
+      `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
+        fullAddress
+      )}&key=${API_KEY}`
+    );
+
+    const data = await response.json();
+
+    if (data.status === "OK") {
+      const location = data.results[0].geometry.location;
+      return {
+        latitude: location.lat,
+        longitude: location.lng,
+      };
+    } else {
+      throw new Error("Geocoding failed");
+    }
+  };
+
   useEffect(() => {
     const loadUser = async () => {
       if (!userPhone) {
@@ -56,22 +79,38 @@ export default function Checkout() {
     loadUser();
   }, [userPhone, navigate]);
 
+  // 🔥 Address Save with Lat/Lng
   const handleAddressSubmit = async (e) => {
     e.preventDefault();
+
     if (!newAddress.address_line) {
       alert("Address is required");
       return;
     }
+
     try {
+      const fullAddress = `${newAddress.address_line}, ${newAddress.city}, ${newAddress.state}, ${newAddress.pincode}`;
+
+      const location = await getLatLngFromAddress(fullAddress);
+
       const updatedAddress = await upsertUserAddress({
         userId: user.id,
         ...newAddress,
+        latitude: location.latitude,
+        longitude: location.longitude,
       });
+
       if (updatedAddress) {
         setAddress({ ...updatedAddress });
         setShowAddressForm(false);
       }
-      setNewAddress({ address_line: "", city: "", state: "", pincode: "" });
+
+      setNewAddress({
+        address_line: "",
+        city: "",
+        state: "",
+        pincode: "",
+      });
     } catch (err) {
       console.error(err);
       alert("Address save failed");
@@ -88,14 +127,12 @@ export default function Checkout() {
       return;
     }
 
-    const totalAmount = getTotal(); // ₹ amount
+    const totalAmount = getTotal();
 
-    // -------------------- Online Payment Flow --------------------
+    // -------------------- ONLINE PAYMENT --------------------
     if (paymentMethod === "online") {
       try {
-        // 1️⃣ Call backend to create Razorpay order
-        const res = await fetch("http://localhost:3000/create-order"
-, {
+        const res = await fetch("http://localhost:3000/create-order", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ amount: totalAmount }),
@@ -103,16 +140,14 @@ export default function Checkout() {
 
         const orderData = await res.json();
 
-        // 2️⃣ Open Razorpay checkout
         const options = {
-          key: "rzp_test_SGh1UwVFh4saU0", // Razorpay standard plan key
+          key: "rzp_test_SGh1UwVFh4saU0",
           amount: orderData.amount,
           currency: "INR",
           name: "Cravio User",
           description: "Food Order Payment",
           order_id: orderData.id,
           handler: async function (response) {
-            // Payment successful, save order in DB
             const order = await createOrder({
               user_id: user.id,
               address_id: address.id,
@@ -120,6 +155,8 @@ export default function Checkout() {
               status: "paid",
               payment_method: paymentMethod,
               payment_id: response.razorpay_payment_id,
+              delivery_latitude: address.latitude,
+              delivery_longitude: address.longitude,
             });
 
             const orderItems = cart.map((item) => ({
@@ -146,12 +183,12 @@ export default function Checkout() {
         rzp.open();
       } catch (err) {
         console.error(err);
-        alert("Payment failed. Try again.");
+        alert("Payment failed");
       }
       return;
     }
 
-    // -------------------- COD Flow (unchanged) --------------------
+    // -------------------- COD --------------------
     try {
       const order = await createOrder({
         user_id: user.id,
@@ -159,6 +196,8 @@ export default function Checkout() {
         total_amount: totalAmount,
         status: "pending",
         payment_method: paymentMethod,
+        delivery_latitude: address.latitude,
+        delivery_longitude: address.longitude,
       });
 
       const orderItems = cart.map((item) => ({
@@ -172,10 +211,13 @@ export default function Checkout() {
       await insertOrderItems(orderItems);
       await clearUserCart(user.id);
       clearCart();
-      navigate("/success-order", { state: { id: order.id } });
+      navigate("/success-order", { 
+        state: { 
+          id: order.id, 
+        }, });
     } catch (err) {
       console.error(err);
-      alert("Failed to place order. Try again.");
+      alert("Failed to place order");
     }
   };
 
@@ -195,7 +237,6 @@ export default function Checkout() {
           </p>
         ) : (
           <>
-            {/* Cart Items */}
             <div className="space-y-4">
               {cart.map((item) => (
                 <div
@@ -208,16 +249,21 @@ export default function Checkout() {
                     className="w-20 h-20 rounded-xl object-cover"
                   />
                   <div className="flex-1">
-                    <h2 className="font-semibold text-gray-800">{item.name}</h2>
+                    <h2 className="font-semibold text-gray-800">
+                      {item.name}
+                    </h2>
                     <p className="text-sm text-gray-500">₹{item.price}</p>
-                    <p className="text-xs text-gray-400">{item.restaurant_name}</p>
-                    <p className="text-xs text-gray-400">Qty: {item.quantity}</p>
+                    <p className="text-xs text-gray-400">
+                      {item.restaurant_name}
+                    </p>
+                    <p className="text-xs text-gray-400">
+                      Qty: {item.quantity}
+                    </p>
                   </div>
                 </div>
               ))}
             </div>
 
-            {/* Address Section */}
             <div className="bg-white rounded-2xl shadow-md p-4 mt-6">
               <h2 className="font-semibold text-gray-700 mb-2">
                 Delivery Address
@@ -225,7 +271,7 @@ export default function Checkout() {
 
               {address && !showAddressForm ? (
                 <>
-                  <div key={address?.id} className="text-gray-600 text-sm">
+                  <div className="text-gray-600 text-sm">
                     <p>{address.address_line}</p>
                     <p>
                       {address.city}, {address.state} - {address.pincode}
@@ -246,7 +292,10 @@ export default function Checkout() {
                       className="w-full border px-3 py-2 rounded-lg"
                       value={newAddress.address_line}
                       onChange={(e) =>
-                        setNewAddress({ ...newAddress, address_line: e.target.value })
+                        setNewAddress({
+                          ...newAddress,
+                          address_line: e.target.value,
+                        })
                       }
                     />
                     <input
@@ -254,7 +303,10 @@ export default function Checkout() {
                       className="w-full border px-3 py-2 rounded-lg"
                       value={newAddress.city}
                       onChange={(e) =>
-                        setNewAddress({ ...newAddress, city: e.target.value })
+                        setNewAddress({
+                          ...newAddress,
+                          city: e.target.value,
+                        })
                       }
                     />
                     <input
@@ -262,7 +314,10 @@ export default function Checkout() {
                       className="w-full border px-3 py-2 rounded-lg"
                       value={newAddress.state}
                       onChange={(e) =>
-                        setNewAddress({ ...newAddress, state: e.target.value })
+                        setNewAddress({
+                          ...newAddress,
+                          state: e.target.value,
+                        })
                       }
                     />
                     <input
@@ -270,7 +325,10 @@ export default function Checkout() {
                       className="w-full border px-3 py-2 rounded-lg"
                       value={newAddress.pincode}
                       onChange={(e) =>
-                        setNewAddress({ ...newAddress, pincode: e.target.value })
+                        setNewAddress({
+                          ...newAddress,
+                          pincode: e.target.value,
+                        })
                       }
                     />
                     <button
@@ -284,9 +342,10 @@ export default function Checkout() {
               )}
             </div>
 
-            {/* Payment Method */}
             <div className="bg-white rounded-2xl shadow-md p-4 mt-6">
-              <h2 className="font-semibold text-gray-700 mb-3">Payment Method</h2>
+              <h2 className="font-semibold text-gray-700 mb-3">
+                Payment Method
+              </h2>
 
               <label className="flex items-center gap-3 mb-2">
                 <input
@@ -307,7 +366,6 @@ export default function Checkout() {
               </label>
             </div>
 
-            {/* Total */}
             <div className="bg-white rounded-2xl shadow-lg p-5 mt-6">
               <div className="flex justify-between font-semibold text-lg mb-4">
                 <span>Total</span>
@@ -323,7 +381,6 @@ export default function Checkout() {
           </>
         )}
       </div>
-
       <BottomNav />
     </>
   );
