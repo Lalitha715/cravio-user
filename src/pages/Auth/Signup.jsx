@@ -1,40 +1,47 @@
 import { useEffect, useState } from "react";
 import { auth } from "../../services/firebase";
-import {
-  RecaptchaVerifier,
-  signInWithPhoneNumber,
-} from "firebase/auth";
+import { RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
 import { Link, useNavigate } from "react-router-dom";
-import client from "../../apolloClient"; // Apollo client
+import client from "../../apolloClient";
 import { gql } from "@apollo/client";
 import toast from "react-hot-toast";
 
 export default function Signup() {
-  const [name, setName] = useState(""); // ✅ New name field
+  const [name, setName] = useState("");
   const [countryCode, setCountryCode] = useState("+91");
   const [number, setNumber] = useState("");
   const [otp, setOtp] = useState("");
   const [confirmation, setConfirmation] = useState(null);
   const [loading, setLoading] = useState(false);
+
   const navigate = useNavigate();
 
+  // ✅ Setup Recaptcha (Correct v9 format)
   useEffect(() => {
-    if (!window.recaptchaVerifier) {
-      window.recaptchaVerifier = new RecaptchaVerifier(
-        auth,
-        "recaptcha-container",
-        { size: "invisible" }
-      );
-    }
-  }, []);
-
-  const sendOtp = async () => {
-    if (!name.trim()) {
-    toast.error("Enter your name");
+    if (!auth) {
+      console.log("Auth undefined ❌");
       return;
     }
 
-    if (number.length < 10) {
+    if (window.recaptchaVerifier) return;
+
+    window.recaptchaVerifier = new RecaptchaVerifier(
+      auth,
+      "recaptcha-container",
+      {
+        size: "invisible",
+      }
+    );
+  }, []);
+
+  // ✅ Send OTP
+  const sendOtp = async () => {
+    if (!name.trim()) {
+      toast.error("Enter your name");
+      return;
+    }
+
+    if (number.length !== 10) {
       toast.error("Enter valid mobile number");
       return;
     }
@@ -42,29 +49,34 @@ export default function Signup() {
     try {
       setLoading(true);
       toast.loading("Sending OTP...");
-      const res = await signInWithPhoneNumber(
+
+      const appVerifier = window.recaptchaVerifier;
+
+      const result = await signInWithPhoneNumber(
         auth,
         `${countryCode}${number}`,
-        window.recaptchaVerifier
+        appVerifier
       );
-      setConfirmation(res);
+
+      setConfirmation(result);
+
       toast.dismiss();
-      toast.success("OTP Sent 📲");
-    } catch (err) {
+      toast.success("OTP Sent Successfully 📲");
+    } catch (error) {
       toast.dismiss();
-      toast.error(err.message||"OTP sending failed");
+      toast.error(error.message);
+      console.log(error);
     } finally {
       setLoading(false);
     }
   };
 
+  // ✅ Save user to Hasura
   const saveUser = async (phone) => {
     const mutation = gql`
       mutation InsertUser($phone: String!, $name: String!) {
         insert_users_one(object: { phone: $phone, name: $name }) {
           id
-          name
-          phone
         }
       }
     `;
@@ -74,31 +86,38 @@ export default function Signup() {
         mutation,
         variables: { phone, name },
       });
-      console.log("User saved to Hasura ✅");
+      console.log("User saved ✅");
     } catch (err) {
-      console.error("Error saving user:", err);
+      console.log("Hasura error:", err);
     }
   };
 
+  // ✅ Verify OTP
   const verifyOtp = async () => {
+    if (!otp || otp.length !== 6) {
+      toast.error("Enter valid OTP");
+      return;
+    }
+
     try {
       setLoading(true);
       toast.loading("Verifying OTP...");
+
       const result = await confirmation.confirm(otp);
+
       const fullPhone = result.user.phoneNumber;
 
-      // Store phone locally
       localStorage.setItem("userPhone", fullPhone);
 
-      // Save user in Hasura
       await saveUser(fullPhone);
+
       toast.dismiss();
       toast.success("Signup Successful 🎉");
 
-      navigate("/signup-success", { state: { type: "signup" } });
-    } catch {
+      navigate("/signup-success");
+    } catch (error) {
       toast.dismiss();
-      toast.error("Invalid OTP");
+      toast.error("Invalid OTP ❌");
     } finally {
       setLoading(false);
     }
@@ -106,86 +125,76 @@ export default function Signup() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="relative w-96 p-[2px] rounded-2xl bg-gradient-to-br 
-        from-blue-500 via-green-400 via-violet-500 via-orange-400 via-pink-400 to-red-500 shadow-2xl">
+      <div className="w-96 p-8 bg-white rounded-2xl shadow-xl">
 
-        <div className="bg-white rounded-2xl p-8">
-          <h2 className="text-2xl font-extrabold text-center text-orange-500">
-            Create Account
-          </h2>
-          <p className="text-center text-gray-500 mb-6">
-            Sign up with your mobile number
-          </p>
+        <h2 className="text-2xl font-bold text-center mb-4">
+          Create Account
+        </h2>
 
-          {/* Name Input */}
-          <input
-            type="text"
-            placeholder="Full Name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="border rounded-lg px-3 py-2 mb-4 w-full focus:ring-2 focus:ring-orange-400 outline-none"
-          />
+        <input
+          type="text"
+          placeholder="Full Name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          className="border w-full p-2 mb-3 rounded"
+        />
 
-          {/* Phone input */}
-          <div className="flex gap-2 mb-4">
-            <select
-              value={countryCode}
-              onChange={(e) => setCountryCode(e.target.value)}
-              className="border rounded-lg px-2 py-2 bg-gray-100 text-sm font-medium"
-            >
-              <option value="+91">IN +91</option>
-              <option value="+1">US +1</option>
-              <option value="+44">UK +44</option>
-            </select>
-
-            <input
-              type="tel"
-              placeholder="Mobile number"
-              value={number}
-              onChange={(e) => setNumber(e.target.value)}
-              className="flex-1 border rounded-lg px-3 py-2 focus:ring-2 focus:ring-orange-400 outline-none"
-            />
-          </div>
-
-          <button
-            onClick={sendOtp}
-            disabled={loading}
-            className="w-full bg-gradient-to-r from-orange-500 to-red-500 
-              text-white py-2 rounded-lg font-semibold hover:opacity-90 transition"
+        <div className="flex gap-2 mb-3">
+          <select
+            value={countryCode}
+            onChange={(e) => setCountryCode(e.target.value)}
+            className="border p-2 rounded"
           >
-            {loading ? "Sending OTP..." : "Send OTP"}
-          </button>
+            <option value="+91">IN +91</option>
+            <option value="+1">US +1</option>
+          </select>
 
-          {confirmation && (
-            <>
-              <input
-                value={otp}
-                onChange={(e) => setOtp(e.target.value)}
-                placeholder="Enter OTP"
-                className="border p-2 w-full mt-4 rounded-lg text-center tracking-widest 
-                  focus:ring-2 focus:ring-green-400 outline-none"
-              />
-
-              <button
-                onClick={verifyOtp}
-                disabled={loading}
-                className="w-full mt-3 bg-gradient-to-r from-green-500 to-emerald-500 
-                  text-white py-2 rounded-lg font-semibold hover:opacity-90 transition"
-              >
-                {loading ? "Verifying..." : "Verify & Signup"}
-              </button>
-            </>
-          )}
-
-          <p className="text-sm text-center mt-5">
-            Already have an account?{" "}
-            <Link to="/login" className="text-red-500 font-semibold">
-              Login
-            </Link>
-          </p>
-
-          <div id="recaptcha-container"></div>
+          <input
+            type="tel"
+            placeholder="Mobile number"
+            value={number}
+            onChange={(e) => setNumber(e.target.value)}
+            className="border flex-1 p-2 rounded"
+          />
         </div>
+
+        <button
+          onClick={sendOtp}
+          disabled={loading}
+          className="w-full bg-orange-500 text-white p-2 rounded"
+        >
+          {loading ? "Sending..." : "Send OTP"}
+        </button>
+
+        {confirmation && (
+          <>
+            <input
+              value={otp}
+              onChange={(e) => setOtp(e.target.value)}
+              placeholder="Enter OTP"
+              className="border w-full p-2 mt-4 rounded text-center"
+            />
+
+            <button
+              onClick={verifyOtp}
+              disabled={loading}
+              className="w-full mt-3 bg-green-500 text-white p-2 rounded"
+            >
+              {loading ? "Verifying..." : "Verify & Signup"}
+            </button>
+          </>
+        )}
+
+        <p className="text-sm text-center mt-5">
+          Already have an account?{" "}
+          <Link to="/login" className="text-blue-600">
+            Login
+          </Link>
+        </p>
+
+        {/* Recaptcha container */}
+        <div id="recaptcha-container"></div>
+
       </div>
     </div>
   );

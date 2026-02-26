@@ -2,6 +2,9 @@
   "name": "cravio-user",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+  "node": "18.x"
+},
   "dependencies": {
     "@apollo/client": "^3.9.0",
     "@heroicons/react": "^2.2.0",
