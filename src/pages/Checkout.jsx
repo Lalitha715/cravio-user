@@ -33,29 +33,22 @@ export default function Checkout() {
   });
   const [loading, setLoading] = useState(true);
 
-  // 🔥 Google Geocode Function
+  // Get lat/lng from full address
   const getLatLngFromAddress = async (fullAddress) => {
-    const API_KEY = "YOUR_GOOGLE_MAPS_API_KEY";
-
+    const API_KEY = "YOUR_GOOGLE_MAPS_API_KEY"; // replace with real key
     const response = await fetch(
       `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(
         fullAddress
       )}&key=${API_KEY}`
     );
-
     const data = await response.json();
-
     if (data.status === "OK") {
       const location = data.results[0].geometry.location;
-      return {
-        latitude: location.lat,
-        longitude: location.lng,
-      };
-    } else {
-      throw new Error("Geocoding failed");
-    }
+      return { latitude: location.lat, longitude: location.lng };
+    } else throw new Error("Geocoding failed");
   };
 
+  // Load user & address
   useEffect(() => {
     const loadUser = async () => {
       if (!userPhone) {
@@ -65,9 +58,7 @@ export default function Checkout() {
       }
 
       let u = await getUserByPhone(userPhone);
-      if (!u) {
-        u = await createUser(userPhone, `${userPhone}@temp.com`);
-      }
+      if (!u) u = await createUser(userPhone, `${userPhone}@temp.com`);
       setUser(u);
 
       const addr = await getUserAddress(u.id);
@@ -79,18 +70,13 @@ export default function Checkout() {
     loadUser();
   }, [userPhone, navigate]);
 
-  // 🔥 Address Save with Lat/Lng
+  // Save address
   const handleAddressSubmit = async (e) => {
     e.preventDefault();
-
-    if (!newAddress.address_line) {
-      alert("Address is required");
-      return;
-    }
+    if (!newAddress.address_line) return alert("Address is required");
 
     try {
       const fullAddress = `${newAddress.address_line}, ${newAddress.city}, ${newAddress.state}, ${newAddress.pincode}`;
-
       const location = await getLatLngFromAddress(fullAddress);
 
       const updatedAddress = await upsertUserAddress({
@@ -105,12 +91,7 @@ export default function Checkout() {
         setShowAddressForm(false);
       }
 
-      setNewAddress({
-        address_line: "",
-        city: "",
-        state: "",
-        pincode: "",
-      });
+      setNewAddress({ address_line: "", city: "", state: "", pincode: "" });
     } catch (err) {
       console.error(err);
       alert("Address save failed");
@@ -120,24 +101,23 @@ export default function Checkout() {
   const getTotal = () =>
     cart.reduce((sum, item) => sum + item.quantity * item.price, 0);
 
-  // -------------------- Place Order --------------------
+  // Place order
   const handlePlaceOrder = async () => {
-    if (!address) {
-      alert("Please add an address first");
-      return;
-    }
+    if (!address) return alert("Please add an address first");
 
     const totalAmount = getTotal();
 
     // -------------------- ONLINE PAYMENT --------------------
     if (paymentMethod === "online") {
       try {
-        const res = await fetch(`${process.env.REACT_APP_API_URL}/api/create-order`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ amount: totalAmount }),
-        });
-
+        const res = await fetch(
+          `${process.env.REACT_APP_API_URL}/api/create-order`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ amount: totalAmount }),
+          }
+        );
         const orderData = await res.json();
 
         const options = {
@@ -211,10 +191,7 @@ export default function Checkout() {
       await insertOrderItems(orderItems);
       await clearUserCart(user.id);
       clearCart();
-      navigate("/success-order", { 
-        state: { 
-          id: order.id, 
-        }, });
+      navigate("/success-order", { state: { id: order.id } });
     } catch (err) {
       console.error(err);
       alert("Failed to place order");
@@ -249,25 +226,17 @@ export default function Checkout() {
                     className="w-20 h-20 rounded-xl object-cover"
                   />
                   <div className="flex-1">
-                    <h2 className="font-semibold text-gray-800">
-                      {item.name}
-                    </h2>
+                    <h2 className="font-semibold text-gray-800">{item.name}</h2>
                     <p className="text-sm text-gray-500">₹{item.price}</p>
-                    <p className="text-xs text-gray-400">
-                      {item.restaurant_name}
-                    </p>
-                    <p className="text-xs text-gray-400">
-                      Qty: {item.quantity}
-                    </p>
+                    <p className="text-xs text-gray-400">{item.restaurant_name}</p>
+                    <p className="text-xs text-gray-400">Qty: {item.quantity}</p>
                   </div>
                 </div>
               ))}
             </div>
 
             <div className="bg-white rounded-2xl shadow-md p-4 mt-6">
-              <h2 className="font-semibold text-gray-700 mb-2">
-                Delivery Address
-              </h2>
+              <h2 className="font-semibold text-gray-700 mb-2">Delivery Address</h2>
 
               {address && !showAddressForm ? (
                 <>
@@ -292,10 +261,7 @@ export default function Checkout() {
                       className="w-full border px-3 py-2 rounded-lg"
                       value={newAddress.address_line}
                       onChange={(e) =>
-                        setNewAddress({
-                          ...newAddress,
-                          address_line: e.target.value,
-                        })
+                        setNewAddress({ ...newAddress, address_line: e.target.value })
                       }
                     />
                     <input
@@ -303,10 +269,7 @@ export default function Checkout() {
                       className="w-full border px-3 py-2 rounded-lg"
                       value={newAddress.city}
                       onChange={(e) =>
-                        setNewAddress({
-                          ...newAddress,
-                          city: e.target.value,
-                        })
+                        setNewAddress({ ...newAddress, city: e.target.value })
                       }
                     />
                     <input
@@ -314,10 +277,7 @@ export default function Checkout() {
                       className="w-full border px-3 py-2 rounded-lg"
                       value={newAddress.state}
                       onChange={(e) =>
-                        setNewAddress({
-                          ...newAddress,
-                          state: e.target.value,
-                        })
+                        setNewAddress({ ...newAddress, state: e.target.value })
                       }
                     />
                     <input
@@ -325,10 +285,7 @@ export default function Checkout() {
                       className="w-full border px-3 py-2 rounded-lg"
                       value={newAddress.pincode}
                       onChange={(e) =>
-                        setNewAddress({
-                          ...newAddress,
-                          pincode: e.target.value,
-                        })
+                        setNewAddress({ ...newAddress, pincode: e.target.value })
                       }
                     />
                     <button
@@ -343,9 +300,7 @@ export default function Checkout() {
             </div>
 
             <div className="bg-white rounded-2xl shadow-md p-4 mt-6">
-              <h2 className="font-semibold text-gray-700 mb-3">
-                Payment Method
-              </h2>
+              <h2 className="font-semibold text-gray-700 mb-3">Payment Method</h2>
 
               <label className="flex items-center gap-3 mb-2">
                 <input
