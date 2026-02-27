@@ -1,7 +1,7 @@
 // src/pages/RestaurantMenu.jsx
 import React, { useEffect, useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { fetchDishesByRestaurant } from "../api/hasura";
+import { fetchDishesByRestaurant, fetchRestaurants } from "../api/hasura";
 import Header from "../components/Header";
 import BottomNav from "../components/BottomNav";
 import FoodCard from "../components/FoodCard";
@@ -27,18 +27,14 @@ export default function RestaurantMenu() {
       try {
         setLoading(true);
 
+        // Fetch dishes for this restaurant
         const dishesData = await fetchDishesByRestaurant(id);
-
-        console.log("Fetched Dishes:", dishesData);
-
-        // Since API returns only array
         setDishes(dishesData || []);
 
-        // Simple restaurant info (without changing flow)
-        setRestaurant({
-          id: id,
-          name: "Restaurant Menu",
-        });
+        // Fetch restaurant info from Hasura
+        const allRestaurants = await fetchRestaurants();
+        const rest = allRestaurants.find((r) => r.id === id);
+        setRestaurant(rest || { id: id, name: "Unknown Restaurant" });
 
       } catch (err) {
         console.error("Menu Load Error:", err);
@@ -48,9 +44,7 @@ export default function RestaurantMenu() {
       }
     };
 
-    if (id) {
-      loadMenu();
-    }
+    if (id) loadMenu();
   }, [id]);
 
   // Cuisine list
@@ -62,18 +56,12 @@ export default function RestaurantMenu() {
   // Filtered Dishes
   const filteredDishes = useMemo(() => {
     return dishes.filter((dish) => {
-      const matchSearch = dish.name
-        ?.toLowerCase()
-        .includes(search.toLowerCase());
-
-      const matchCuisine =
-        cuisine === "All" || dish.cuisine === cuisine;
-
+      const matchSearch = dish.name?.toLowerCase().includes(search.toLowerCase());
+      const matchCuisine = cuisine === "All" || dish.cuisine === cuisine;
       const matchFoodType =
         foodType === "All" ||
         (foodType === "Veg" && dish.is_veg === true) ||
         (foodType === "Non-Veg" && dish.is_veg === false);
-
       return matchSearch && matchCuisine && matchFoodType;
     });
   }, [dishes, search, cuisine, foodType]);
@@ -88,12 +76,7 @@ export default function RestaurantMenu() {
         <div className="flex items-center gap-3 mb-4">
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center gap-2
-             px-3 py-2 rounded-xl
-             bg-green-50 text-pink-800
-             font-bold text-lg
-             border border-pink-200
-             hover:bg-pink-100 transition"
+            className="flex items-center gap-2 px-3 py-2 rounded-xl bg-green-50 text-pink-800 font-bold text-lg border border-pink-200 hover:bg-pink-100 transition"
           >
             <IoArrowBack size={26} />
           </button>
@@ -126,9 +109,7 @@ export default function RestaurantMenu() {
                 className="px-3 py-2 rounded-lg border bg-white"
               >
                 {cuisines.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
+                  <option key={c} value={c}>{c}</option>
                 ))}
               </select>
 
@@ -138,18 +119,13 @@ export default function RestaurantMenu() {
                   <button
                     key={type}
                     onClick={() => setFoodType(type)}
-                    className={`px-3 py-2 rounded-lg font-semibold transition
-                      ${
-                        foodType === type
-                          ? "bg-orange-600 text-white"
-                          : "bg-white border text-gray-700"
-                      }`}
+                    className={`px-3 py-2 rounded-lg font-semibold transition ${
+                      foodType === type
+                        ? "bg-orange-600 text-white"
+                        : "bg-white border text-gray-700"
+                    }`}
                   >
-                    {type === "Veg"
-                      ? "🌱 Veg"
-                      : type === "Non-Veg"
-                      ? "🥩 Non-Veg"
-                      : "All"}
+                    {type === "Veg" ? "🌱 Veg" : type === "Non-Veg" ? "🥩 Non-Veg" : "All"}
                   </button>
                 ))}
               </div>
@@ -163,9 +139,7 @@ export default function RestaurantMenu() {
         {error && <p className="text-red-500 mt-6">{error}</p>}
 
         {!loading && filteredDishes.length === 0 && (
-          <p className="text-center text-gray-500 mt-10">
-            No dishes found 😕
-          </p>
+          <p className="text-center text-gray-500 mt-10">No dishes found 😕</p>
         )}
 
         {/* Dishes Grid */}

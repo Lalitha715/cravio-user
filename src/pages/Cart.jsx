@@ -25,7 +25,6 @@ export default function Cart() {
   const getTotal = () =>
     cart.reduce((sum, item) => sum + item.quantity * item.price, 0);
 
-  // 🔥 AI Integration (No flow change)
   useEffect(() => {
     const fetchAISuggestions = async () => {
       if (cart.length === 0) {
@@ -36,30 +35,30 @@ export default function Cart() {
       try {
         const firstItem = cart[0];
 
-        const response = await fetch(
-          "http://localhost:3000/api/ai/recommendations",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              item: firstItem.name,
-              history: cart.map((item) => item.name).join(", "),
-            }),
-          }
-        );
+        // 🔹 Use relative URL if you set proxy: "http://localhost:5000"
+        const response = await fetch("/api/ai/recommendations", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            item: firstItem.name,
+            history: cart.map((i) => i.name).join(", "),
+          }),
+        });
+
+        if (!response.ok) throw new Error("AI fetch failed");
 
         const data = await response.json();
 
-        if (data.suggestions) {
-          setAiSuggestions(data.suggestions);
-        } else {
-          setAiSuggestions("");
-        }
+        setAiSuggestions(
+          data.suggestions || "🤖 No AI recommendations at the moment."
+        );
       } catch (error) {
         console.error("AI Error:", error);
-        setAiSuggestions("");
+
+        // Fallback: mock suggestion
+        setAiSuggestions(
+          "🤖 Based on your cart, you might like: Pizza, Burger, Salad"
+        );
       }
     };
 
@@ -79,7 +78,7 @@ export default function Cart() {
           <div className="text-center text-gray-400 mt-20 space-y-4">
             <p className="text-lg">Your cart is empty 🛒</p>
             <button
-              onClick={() => (window.location.href = "/home")}
+              onClick={() => navigate("/home")}
               className="py-2 px-4 bg-orange-500 text-white rounded-lg font-semibold hover:bg-orange-600 transition"
             >
               Explore Restaurants
@@ -100,13 +99,9 @@ export default function Cart() {
 
                 <div className="flex-1 flex flex-col justify-between">
                   <div>
-                    <h2 className="font-semibold text-gray-800">
-                      {item.name}
-                    </h2>
+                    <h2 className="font-semibold text-gray-800">{item.name}</h2>
                     <p className="text-sm text-gray-500">₹{item.price}</p>
-                    <p className="text-xs text-gray-400">
-                      {item.restaurant_name}
-                    </p>
+                    <p className="text-xs text-gray-400">{item.restaurant_name}</p>
                   </div>
 
                   <div className="flex items-center gap-3 mt-3">
@@ -116,9 +111,7 @@ export default function Cart() {
                     >
                       −
                     </button>
-
                     <span className="font-semibold">{item.quantity}</span>
-
                     <button
                       onClick={() => increaseQty(item)}
                       className="w-8 h-8 rounded-full bg-gray-100 font-bold text-lg flex items-center justify-center"
@@ -129,9 +122,7 @@ export default function Cart() {
                 </div>
 
                 <button
-                  onClick={() =>
-                    removeFromCart(item.id, item.restaurant_id)
-                  }
+                  onClick={() => removeFromCart(item.id, item.restaurant_id)}
                   className="absolute top-2 right-2 text-red-500 text-sm font-medium"
                 >
                   ✕
@@ -140,8 +131,7 @@ export default function Cart() {
             ))}
 
             <div className="bg-white rounded-2xl shadow-lg p-5 mt-6 sticky bottom-4">
-              
-              {/* 🔥 AI Suggestions Section */}
+              {/* 🔹 AI Suggestions */}
               {aiSuggestions && (
                 <div className="mb-4 p-3 bg-yellow-50 rounded-xl border border-yellow-200">
                   <h3 className="font-semibold text-sm text-gray-700 mb-1">

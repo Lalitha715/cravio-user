@@ -44,6 +44,10 @@ export const fetchDishesByRestaurant = async (restaurantId) => {
           price
           image_url
           is_available
+          restaurant{
+            id
+            name
+          }
         }
       }
     `,
