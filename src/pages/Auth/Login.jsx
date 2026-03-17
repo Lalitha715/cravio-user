@@ -1,180 +1,88 @@
-import { useEffect, useState } from "react";
-import { auth } from "../../services/firebase";
-import {
-  RecaptchaVerifier,
-  signInWithPhoneNumber,
-} from "firebase/auth";
-import { Link, useNavigate } from "react-router-dom";
-import client from "../../apolloClient"; // Apollo client
-import { gql } from "@apollo/client";
-import toast from "react-hot-toast";
+// src/pages/Login.jsx
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { getUserByEmail } from "../../api/hasura";
 
 export default function Login() {
-  const [countryCode, setCountryCode] = useState("+91");
-  const [number, setNumber] = useState("");
-  const [otp, setOtp] = useState("");
-  const [confirmation, setConfirmation] = useState(null);
-  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
-  useEffect(() => {
-    if (!window.recaptchaVerifier) {
-      window.recaptchaVerifier = new RecaptchaVerifier(
-        auth,
-        "recaptcha-container",
-        { size: "invisible" }
-      );
-    }
-  }, []);
+  const handleLogin = async (e) => {
+    e.preventDefault();
 
-  const sendOtp = async () => {
-    if (number.length < 10) {
-      toast.error("Enter valid mobile number");
-      return;
+    if (!email || !password) {
+      return alert("Please enter email and password");
     }
 
     try {
-      setLoading(true);
-      toast.loading("Sending OTP...");
-      const res = await signInWithPhoneNumber(
-        auth,
-        `${countryCode}${number}`,
-        window.recaptchaVerifier
-      );
-      setConfirmation(res);
-      toast.dismiss();
-      toast.success("OTP Sent 📲");
-    } catch (err) {
-      toast.dismiss();
-      toast.error(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
+      const user = await getUserByEmail(email);
 
-  const fetchUser = async (phone) => {
-    const query = gql`
-    query GetUserByPhone($phone: String!) {
-      users(where: { phone: { _eq: $phone } }) {
-        id
-        name
-      }
-    }
-  `;
-
-    try {
-      const res = await client.query({
-        query,
-        variables: { phone },
-        fetchPolicy: "no-cache",
-      });
-
-      return res.data.users[0] || "";
-    } catch (err) {
-      console.error("Error fetching user :", err);
-      return "";
-    }
-  };
-
-  const verifyOtp = async () => {
-    try {
-      setLoading(true);
-      await confirmation.confirm(otp);
-
-      const fullPhone = `${countryCode}${number}`;
-      localStorage.setItem("userPhone", fullPhone);
-
-      const user = await fetchUser(fullPhone);
-
-      if (user&&user.id) {
-        localStorage.setItem("userId", user.id);   // 🔥 IMPORTANT
-        localStorage.setItem("userName", user.name||"");
-      }else {
-        console.log("No user found with phone:");
+      if (!user) {
+        return alert("User not found");
       }
 
+      // ⚠️ simple check (replace with hashed check if needed)
+      if (user.password_hash !== password) {
+        return alert("Invalid password");
+      }
 
-      navigate("/login-success", { state: { type: "login" } });
-    } catch {
-      toast.dismiss();
-      toast.error("Invalid OTP");
-    } finally {
-      setLoading(false);
+      // ✅ store user
+      localStorage.setItem("userId", user.id);
+      localStorage.setItem("userEmail", email);
+
+      navigate("/");
+    } catch (err) {
+      console.error(err);
+      alert("Login failed");
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="relative w-96 p-[2px] rounded-2xl bg-gradient-to-br 
-        from-blue-500 via-green-400 via-violet-500 via-orange-400 via-pink-400 to-red-500 shadow-2xl">
+    <div className="min-h-screen flex items-center justify-center bg-[#FFF8F5] px-4">
+      <div className="w-full max-w-md rounded-3xl p-[2px] bg-gradient-to-br from-red-500 via-orange-400 to-green-500 shadow-xl">
+        <div className="bg-white rounded-3xl px-6 py-8">
+          
+          <div className="text-center text-4xl mb-3">🍔🍕🍜</div>
 
-        <div className="bg-white rounded-2xl p-8">
-          <h2 className="text-2xl font-extrabold text-center text-blue-600">
-            Login
-          </h2>
-          <p className="text-center text-gray-500 mb-6">
-            Login with your mobile number
-          </p>
+          <h1 className="text-3xl font-extrabold text-center text-red-500 mb-6">
+            Welcome to Cravio 🍴
+          </h1>
 
-          {/* Phone input */}
-          <div className="flex gap-2 mb-4">
-            <select
-              value={countryCode}
-              onChange={(e) => setCountryCode(e.target.value)}
-              className="border rounded-lg px-2 py-2 bg-gray-100 text-sm font-medium"
-            >
-              <option value="+91">IN +91</option>
-              <option value="+1">US +1</option>
-              <option value="+44">UK +44</option>
-            </select>
+          <form onSubmit={handleLogin} className="space-y-4">
+            <input
+              type="email"
+              placeholder="Enter Email"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400 bg-gray-50"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
 
             <input
-              type="tel"
-              placeholder="Mobile number"
-              value={number}
-              onChange={(e) => setNumber(e.target.value)}
-              className="flex-1 border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-400 outline-none"
+              type="password"
+              placeholder="Enter Password"
+              className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-400 bg-gray-50"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
             />
-          </div>
 
-          <button
-            onClick={sendOtp}
-            disabled={loading}
-            className="w-full bg-gradient-to-r from-blue-500 to-violet-500 
-              text-white py-2 rounded-lg font-semibold hover:opacity-90 transition"
-          >
-            {loading ? "Sending OTP..." : "Send OTP"}
-          </button>
+            <button
+              type="submit"
+              className="w-full py-3 rounded-xl text-white font-semibold bg-gradient-to-r from-red-500 to-orange-400 hover:opacity-90 transition"
+            >
+              Login
+            </button>
+          </form>
 
-          {confirmation && (
-            <>
-              <input
-                value={otp}
-                onChange={(e) => setOtp(e.target.value)}
-                placeholder="Enter OTP"
-                className="border p-2 w-full mt-4 rounded-lg text-center tracking-widest 
-                  focus:ring-2 focus:ring-green-400 outline-none"
-              />
-
-              <button
-                onClick={verifyOtp}
-                disabled={loading}
-                className="w-full mt-3 bg-gradient-to-r from-green-500 to-emerald-500 
-                  text-white py-2 rounded-lg font-semibold hover:opacity-90 transition"
-              >
-                {loading ? "Verifying..." : "Verify & Login"}
-              </button>
-            </>
-          )}
-
-          <p className="text-sm text-center mt-5">
-            New user?{" "}
-            <Link to="/signup" className="text-red-500 font-semibold">
-              Signup
-            </Link>
+          <p className="text-center text-sm text-gray-500 mt-4">
+            Don't have an account?{" "}
+            <span
+              className="text-red-500 font-semibold cursor-pointer"
+              onClick={() => navigate("/signup")}
+            >
+              Sign Up
+            </span>
           </p>
-
-          <div id="recaptcha-container"></div>
         </div>
       </div>
     </div>

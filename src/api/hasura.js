@@ -117,48 +117,75 @@ export const fetchUserOrders = async (userId) => {
 };
 
 /* =========================
-   USERS
+   USERS (UPDATED - EMAIL AUTH)
 ========================= */
 
-export const createUser = async (phone) => {
+// 🔥 Create User (Signup)
+export const createUser = async ({ uid, email, name }) => {
   const { data } = await client.mutate({
     mutation: gql`
-      mutation InsertUser($phone: String!) {
+      mutation InsertUser($uid: String!, $email: String!, $name: String!) {
         insert_users_one(
           object: {
-            phone: $phone
-            name: "Temp User"
+            uid: $uid
+            email: $email
+            name: $name
             role: "user"
+          },
+          on_conflict: {
+            constraint: users_email_key,
+            update_columns: [name]
           }
         ) {
           id
-          phone
+          uid
+          email
           name
         }
       }
     `,
-    variables: { phone },
+    variables: { uid, email, name },
   });
 
   return data.insert_users_one;
 };
 
-export const getUserByPhone = async (phone) => {
+// 🔥 Get User by Email (Login)
+export const getUserByEmail = async (email) => {
   const { data } = await client.query({
     query: gql`
-      query GetUser($phone: String!) {
-        users(where: { phone: { _eq: $phone } }) {
+      query GetUser($email: String!) {
+        users(where: { email: { _eq: $email } }) {
           id
-          phone
+          uid
           name
+          email
+          role
+          is_active
         }
       }
     `,
-    variables: { phone },
+    variables: { email },
     fetchPolicy: "no-cache",
   });
 
-  return data.users[0];
+  return data.users[0] || null;
+};
+
+// 🔥 Advanced: Get or Create User (Safe flow)
+export const getOrCreateUser = async ({ uid, email, name }) => {
+  try {
+    const existingUser = await getUserByEmail(email);
+
+    if (existingUser) {
+      return existingUser;
+    }
+
+    return await createUser({ uid, email, name });
+  } catch (err) {
+    console.error("User creation error:", err);
+    throw err;
+  }
 };
 
 /* =========================

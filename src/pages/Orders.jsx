@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getUserByPhone, fetchUserOrders } from "../api/hasura";
+import { getUserByEmail, fetchUserOrders } from "../api/hasura";
 import Header from "../components/Header";
 import BottomNav from "../components/BottomNav";
 
@@ -9,29 +9,49 @@ export default function Orders() {
 
   useEffect(() => {
     const loadOrders = async () => {
-      const rawPhone = localStorage.getItem("userPhone");
-      if (!rawPhone) return setLoading(false);
+      // 🔥 NEW (NO PHONE)
+      const userId = localStorage.getItem("userId");
+      const userEmail = localStorage.getItem("userEmail");
 
-      const phone = rawPhone.replace(/\s+/g, "");
-      const user = await getUserByPhone(phone);
-      if (!user) return setLoading(false);
+      if (!userId && !userEmail) {
+        setLoading(false);
+        return;
+      }
+
+      let user = null;
+
+      // ✅ Priority: userId
+      if (userId) {
+        user = { id: userId };
+      } else if (userEmail) {
+        user = await getUserByEmail(userEmail);
+      }
+
+      if (!user) {
+        setLoading(false);
+        return;
+      }
 
       try {
         const userOrders = await fetchUserOrders(user.id);
 
-        // Group items by restaurant
+        // Group items by restaurant (same logic)
         const formattedOrders = (userOrders || []).map((order) => {
           const restaurantMap = {};
+
           order.items.forEach((item) => {
             const rid = item.restaurant.id;
+
             if (!restaurantMap[rid]) {
               restaurantMap[rid] = {
                 restaurant: item.restaurant,
                 items: [],
               };
             }
+
             restaurantMap[rid].items.push(item);
           });
+
           return {
             ...order,
             groupedItems: Object.values(restaurantMap),
@@ -130,7 +150,6 @@ export default function Orders() {
       </div>
 
       <BottomNav />
-      
     </div>
   );
 }

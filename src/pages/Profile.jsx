@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getUserByPhone, getUserAddress } from "../api/hasura";
+import { getUserByEmail, getUserAddress } from "../api/hasura";
 import Header from "../components/Header";
 import BottomNav from "../components/BottomNav";
 
@@ -7,19 +7,37 @@ export default function Profile() {
   const [user, setUser] = useState(null);
   const [address, setAddress] = useState(null);
   const [loading, setLoading] = useState(true);
-
+  const userEmail = localStorage.getItem("userEmail");
   useEffect(() => {
     const loadProfile = async () => {
-      const rawPhone = localStorage.getItem("userPhone");
-      if (!rawPhone) return setLoading(false);
+      // 🔥 NEW (NO PHONE)
+      const userId = localStorage.getItem("userId");
+      const userEmail = localStorage.getItem("userEmail");
 
-      const phone = rawPhone.replace(/\s+/g, "");
-      const u = await getUserByPhone(phone);
-      if (!u) return setLoading(false);
+      if (!userId && !userEmail) {
+        setLoading(false);
+        return;
+      }
+
+      let u = null;
+
+      // ✅ Priority: userId
+      if (userId) {
+        u = { id: userId };
+      } else if (userEmail) {
+        u = await getUserByEmail(userEmail);
+      }
+
+      if (!u) {
+        setLoading(false);
+        return;
+      }
 
       setUser(u);
+
       const addr = await getUserAddress(u.id);
       setAddress(addr || null);
+
       setLoading(false);
     };
 
@@ -56,13 +74,23 @@ export default function Profile() {
               </p>
             </div>
 
-            {/* Phone */}
+            {/* Email */}
+            <div className="mb-5">
+              <p className="text-xs font-medium text-gray-400 tracking-widest">
+                EMAIL
+              </p>
+              <p className="text-lg font-semibold text-gray-800 mt-1">
+                {userEmail || "Not available"}
+              </p>
+            </div>
+
+            {/* Phone (optional) */}
             <div className="mb-5">
               <p className="text-xs font-medium text-gray-400 tracking-widest">
                 PHONE
               </p>
               <p className="text-lg font-semibold text-gray-800 mt-1">
-                {user?.phone}
+                {user?.phone || "Not added"}
               </p>
             </div>
 
@@ -90,7 +118,10 @@ export default function Profile() {
             {/* Logout */}
             <button
               onClick={() => {
-                localStorage.removeItem("userPhone");
+                // 🔥 CLEAR NEW KEYS
+                localStorage.removeItem("userId");
+                localStorage.removeItem("userEmail");
+
                 window.location.href = "/login";
               }}
               className="w-full py-3 rounded-xl text-white font-semibold bg-gradient-to-r from-red-500 to-pink-500 hover:opacity-90 transition"
@@ -102,7 +133,6 @@ export default function Profile() {
       </div>
 
       <BottomNav />
-      
     </div>
   );
 }
