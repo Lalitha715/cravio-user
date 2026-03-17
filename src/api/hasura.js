@@ -161,6 +161,7 @@ export const getUserByEmail = async (email) => {
           uid
           name
           email
+          password
           role
           is_active
         }
