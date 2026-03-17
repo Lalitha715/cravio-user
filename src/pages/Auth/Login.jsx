@@ -23,7 +23,7 @@ export default function Login() {
       }
 
       // ⚠️ simple check (replace with hashed check if needed)
-      if (user.password_hash !== password) {
+      if (user.password !== password) {
         return alert("Invalid password");
       }
 
