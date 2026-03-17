@@ -13,7 +13,7 @@ export const fetchRestaurants = async () => {
           id
           name
           image_url
-          rating
+          hygiene_rating
           address
           latitude
           longitude

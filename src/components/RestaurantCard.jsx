@@ -7,7 +7,7 @@ import React from "react";
 
 const parseTime = (time) => {
   if (!time) return null;
-  const clean = time.split("+")[0]; // remove timezone
+  const clean = time.split("+")[0]; 
   const [h, m] = clean.split(":").map(Number);
   const d = new Date();
   d.setHours(h, m, 0, 0);
@@ -40,11 +40,8 @@ export default function RestaurantCard({ restaurant, onClick }) {
     closeTime.setHours(closeH, closeM, 0, 0);
 
     if (closeTime <= openTime) {
-      // If current time is before closeTime (after midnight) or after openTime
       return now >= openTime || now <= closeTime;
     }
-
-
 
     return now >= openTime && now <= closeTime;
   };
@@ -81,9 +78,9 @@ export default function RestaurantCard({ restaurant, onClick }) {
             {open ? "Open Now" : "Closed"}
           </span>
 
-          {/* Rating */}
+          {/* ⭐ Restaurant Rating */}
           <span className="absolute top-3 right-3 bg-white/90 text-green-600 text-xs font-bold px-3 py-1 rounded-full shadow">
-            ⭐ {restaurant.hygiene_rating ?? 0}
+            ⭐ {restaurant.rating ?? 0}
           </span>
         </div>
 
@@ -93,7 +90,26 @@ export default function RestaurantCard({ restaurant, onClick }) {
             <h2 className="text-lg font-bold text-gray-800 truncate">
               {restaurant.name}
             </h2>
-            <p className="text-sm text-gray-500 mt-1 line-clamp-2">
+
+            {/* 🧼 Hygiene Rating Badge */}
+            {restaurant.hygiene_rating !== undefined && (
+              <div className="mt-2">
+                <span
+                  className={`text-xs font-semibold px-2 py-1 rounded-full text-white
+                    ${
+                      restaurant.hygiene_rating >= 4
+                        ? "bg-green-500"
+                        : restaurant.hygiene_rating >= 3
+                        ? "bg-yellow-500"
+                        : "bg-red-500"
+                    }`}
+                >
+                  🧼 Hygiene {restaurant.hygiene_rating}
+                </span>
+              </div>
+            )}
+
+            <p className="text-sm text-gray-500 mt-2 line-clamp-2">
               {restaurant.address ?? "No address"}
             </p>
           </div>
@@ -105,8 +121,9 @@ export default function RestaurantCard({ restaurant, onClick }) {
             </span>
 
             <span
-              className={`text-sm font-semibold ${open ? "text-red-500" : "text-gray-400"
-                }`}
+              className={`text-sm font-semibold ${
+                open ? "text-red-500" : "text-gray-400"
+              }`}
             >
               {open ? "View Menu →" : "Unavailable"}
             </span>

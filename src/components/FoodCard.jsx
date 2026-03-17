@@ -2,7 +2,12 @@
 import React from "react";
 import { useCart } from "../context/CartContext";
 
-export default function FoodCard({ dish, restaurantId, restaurantName }) {
+export default function FoodCard({ 
+  dish, 
+  restaurantId, 
+  restaurantName,
+  hygieneRating   // ✅ new prop added
+}) {
   const { cart, addToCart, removeFromCart, updateQuantity } = useCart();
 
   const cartItem = cart.find(
@@ -53,6 +58,24 @@ export default function FoodCard({ dish, restaurantId, restaurantName }) {
             {dish.name}
           </h3>
 
+          {/* ✅ Hygiene Rating Badge (New Addition – Flow Not Changed) */}
+          {hygieneRating && (
+            <div className="mt-2">
+              <span
+                className={`text-xs font-semibold px-2 py-1 rounded-full text-white
+                  ${
+                    hygieneRating >= 4
+                      ? "bg-green-500"
+                      : hygieneRating >= 3
+                      ? "bg-yellow-500"
+                      : "bg-red-500"
+                  }`}
+              >
+                🧼 Hygiene {hygieneRating} ⭐
+              </span>
+            </div>
+          )}
+
           {/* Cart Actions */}
           {quantity === 0 ? (
             <button
@@ -87,4 +110,3 @@ export default function FoodCard({ dish, restaurantId, restaurantName }) {
     </div>
   );
 }
-
