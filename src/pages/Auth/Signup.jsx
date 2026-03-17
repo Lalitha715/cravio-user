@@ -24,9 +24,9 @@ export default function Signup() {
       }
 
       const newUser = await createUser({
-        name,
-        email,
-        password: password, // ⚠️ can hash later
+        name: name.trim(),
+        email: email.trim(),
+        password: password.trim(),
       });
 
       // ✅ store

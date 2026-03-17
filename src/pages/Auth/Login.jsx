@@ -23,7 +23,7 @@ export default function Login() {
       }
 
       // ⚠️ simple check (replace with hashed check if needed)
-      if (user.password !== password) {
+      if (user.password.trim() !== password.trim()) {
         return alert("Invalid password");
       }
 
@@ -31,7 +31,7 @@ export default function Login() {
       localStorage.setItem("userId", user.id);
       localStorage.setItem("userEmail", email);
 
-      navigate("/");
+      navigate("/login-success");
     } catch (err) {
       console.error(err);
       alert("Login failed");
