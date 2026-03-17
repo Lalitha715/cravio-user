@@ -127,7 +127,6 @@ export const createUser = async ({ uid, email, name }) => {
       mutation InsertUser($uid: String!, $email: String!, $name: String!) {
         insert_users_one(
           object: {
-            uid: $uid
             email: $email
             name: $name
             role: "user"
@@ -138,13 +137,12 @@ export const createUser = async ({ uid, email, name }) => {
           }
         ) {
           id
-          uid
           email
           name
         }
       }
     `,
-    variables: { uid, email, name },
+    variables: { password, email, name },
   });
 
   return data.insert_users_one;
