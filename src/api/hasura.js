@@ -121,15 +121,16 @@ export const fetchUserOrders = async (userId) => {
 ========================= */
 
 // 🔥 Create User (Signup)
-export const createUser = async ({ uid, email, name }) => {
+export const createUser = async ({ uid, email, name,password }) => {
   const { data } = await client.mutate({
     mutation: gql`
-      mutation InsertUser($uid: String!, $email: String!, $name: String!) {
+      mutation InsertUser($uid: String!, $email: String!, $name: String!, $password: String!) {
         insert_users_one(
           object: {
             email: $email
             name: $name
             role: "user"
+            password: $password
           },
           on_conflict: {
             constraint: users_email_key,
@@ -139,6 +140,8 @@ export const createUser = async ({ uid, email, name }) => {
           id
           email
           name
+          password
+
         }
       }
     `,
