@@ -22,7 +22,6 @@ export default function Signup() {
       if (existing) {
         return alert("User already exists");
       }
-
       const newUser = await createUser({
         name: name.trim(),
         email: email.trim(),
@@ -34,7 +33,7 @@ export default function Signup() {
       localStorage.setItem("userEmail", email);
 
       alert("Signup successful!");
-      navigate("/");
+      navigate("/signup-success");
     } catch (err) {
       console.error(err);
       alert("Signup failed");
