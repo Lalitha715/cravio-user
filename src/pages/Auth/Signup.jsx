@@ -31,6 +31,7 @@ export default function Signup() {
       // ✅ store
       localStorage.setItem("userId", newUser.id);
       localStorage.setItem("userEmail", email);
+      localStorage.setItem("userName", name);
 
       alert("Signup successful!");
       navigate("/signup-success");

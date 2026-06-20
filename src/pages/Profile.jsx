@@ -22,9 +22,7 @@ export default function Profile() {
       let u = null;
 
       // ✅ Priority: userId
-      if (userId) {
-        u = { id: userId };
-      } else if (userEmail) {
+      if (userEmail) {
         u = await getUserByEmail(userEmail);
       }
 
